@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/fragments :: head('Complaints')}">
+</head>
+<body>
+    <div class="wrapper">
+        <div th:replace="~{admin/fragments :: sidebar('complaints')}"></div>
+        
+        <div class="main-panel">
+            <div th:replace="~{admin/fragments :: navbar('Complaints Helpdesk')}"></div>
+
+            <div class="content-padding">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h2 class="page-title">Complaints & Tickets</h2>
+                        <p class="text-muted mb-0">Track and manage student issues</p>
+                    </div>
+                    <div class="input-group" style="width: 250px;">
+                        <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+                        <input type="text" class="form-control border-start-0 ps-0" placeholder="Search tickets...">
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead>
+                                    <tr>
+                                        <th style="padding-left: 24px;">Ticket ID</th>
+                                        <th>Issue Title</th>
+                                        <th>Student</th>
+                                        <th>Status</th>
+                                        <th class="text-end" style="padding-right: 24px;">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="complaint : ${complaints}">
+                                        <td style="padding-left: 24px;" class="fw-medium font-monospace text-muted" th:text="${'TKT-' + #strings.replace(#numbers.formatInteger(complaint.id, 4), ',', '')}">TKT-0001</td>
+                                        <td>
+                                            <div class="fw-semibold text-dark" th:text="${complaint.title}">Wifi Issue</div>
+                                            <div class="text-muted small text-truncate" style="max-width: 250px;" th:text="${complaint.description}">The wifi on the 3rd floor is down.</div>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="user-avatar me-2" style="width: 28px; height: 28px; font-size: 0.7rem; background: var(--secondary); color: var(--dark);" th:text="${#strings.substring(complaint.student.firstName,0,1) + #strings.substring(complaint.student.lastName,0,1)}">JD</div>
+                                                <span class="small fw-medium" th:text="${complaint.student.firstName + ' ' + complaint.student.lastName}">Student Name</span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="badge badge-soft-warning px-2 py-1" th:if="${complaint.status.name() == 'OPEN'}"><i class="bi bi-circle-fill text-warning me-1" style="font-size: 0.5rem;"></i> Open</span>
+                                            <span class="badge badge-soft-primary px-2 py-1" th:if="${complaint.status.name() == 'IN_PROGRESS'}"><i class="bi bi-circle-fill text-primary me-1" style="font-size: 0.5rem;"></i> In Progress</span>
+                                            <span class="badge badge-soft-success px-2 py-1" th:if="${complaint.status.name() == 'RESOLVED'}"><i class="bi bi-check-circle-fill me-1"></i> Resolved</span>
+                                            <span class="badge bg-light text-muted border px-2 py-1" th:if="${complaint.status.name() == 'CLOSED'}"><i class="bi bi-dash-circle-fill me-1"></i> Closed</span>
+                                        </td>
+                                        <td class="text-end" style="padding-right: 24px;">
+                                            <button class="btn btn-sm btn-light border fw-medium px-3 text-primary">Resolve</button>
+                                        </td>
+                                    </tr>
+                                    <tr th:if="${#lists.isEmpty(complaints)}">
+                                        <td colspan="5" class="text-center py-5">
+                                            <div class="text-muted">
+                                                <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
+                                                    <i class="bi bi-inboxes text-muted fs-1"></i>
+                                                </div>
+                                                <h5 class="fw-semibold text-dark">No open tickets</h5>
+                                                <p class="mb-0">Great job! The helpdesk queue is currently empty.</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

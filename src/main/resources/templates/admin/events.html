@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/fragments :: head('Events')}">
+</head>
+<body>
+    <div class="wrapper">
+        <div th:replace="~{admin/fragments :: sidebar('events')}"></div>
+        
+        <div class="main-panel">
+            <div th:replace="~{admin/fragments :: navbar('Events')}"></div>
+
+            <div class="content-padding">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h2 class="page-title">Events</h2>
+                        <p class="text-muted mb-0">Campus events and schedules</p>
+                    </div>
+                    <button class="btn btn-primary shadow-sm"><i class="bi bi-plus-lg me-1"></i> Add New</button>
+                </div>
+                
+                <div class="card">
+                    <div class="card-body p-0">
+                        <div class="text-center py-5 text-muted">
+                            <i class="bi bi-tools fs-1 d-block mb-3 opacity-50"></i>
+                            <h5 class="fw-semibold">Events module under construction</h5>
+                            <p class="mb-0">This feature is currently being integrated.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

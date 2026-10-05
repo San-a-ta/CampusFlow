@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Portal - CampusFlow</title>
+    <!-- Modern Font: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Bootstrap 5 & Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4361ee;
+            --primary-hover: #3a56d4;
+            --secondary: #f8f9fa;
+            --dark: #0f172a;
+            --text-main: #334155;
+            --text-muted: #64748b;
+        }
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: var(--text-main); }
+        .navbar-custom { background-color: var(--primary); padding: 15px 0; box-shadow: 0 4px 12px rgba(67,97,238,0.15); }
+        .navbar-brand { font-weight: 700; color: white !important; font-size: 1.25rem; }
+        .card { border: none; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03); transition: transform 0.2s; }
+        .card-header { background-color: transparent; border-bottom: 1px solid #f1f5f9; padding: 20px; font-weight: 600; }
+        .btn-custom { border-radius: 10px; padding: 12px 20px; font-weight: 500; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100px; transition: 0.3s; }
+        .btn-custom i { font-size: 1.8rem; margin-bottom: 8px; }
+        .btn-custom:hover { transform: translateY(-3px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
+        .list-group-item { border-left: 0; border-right: 0; border-radius: 0 !important; padding: 16px 20px; }
+        .user-header { background: linear-gradient(135deg, var(--primary), #7209b7); color: white; border-radius: 16px; padding: 40px; position: relative; overflow: hidden; margin-bottom: 30px; box-shadow: 0 10px 20px rgba(67,97,238,0.2); }
+        .user-header::after { content: ''; position: absolute; right: -5%; top: -50%; width: 300px; height: 300px; background: rgba(255,255,255,0.1); border-radius: 50%; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-custom">
+        <div class="container">
+            <a class="navbar-brand" href="#"><i class="bi bi-mortarboard-fill me-2"></i> CampusFlow</a>
+            <div class="ms-auto d-flex align-items-center">
+                <span class="text-white me-4 fw-medium"><i class="bi bi-person-circle me-1"></i> <span th:text="${user.firstName + ' ' + user.lastName}">Student</span></span>
+                <form th:action="@{/logout}" method="post" class="m-0">
+                    <button class="btn btn-sm btn-light text-primary fw-semibold rounded-pill px-3 py-2">Logout</button>
+                </form>
+            </div>
+        </div>
+    </nav>
+    
+    <div class="container mt-5">
+        <div class="user-header">
+            <h1 class="fw-bold mb-2">Welcome back, <span th:text="${user.firstName}">Student</span>! 👋</h1>
+            <p class="fs-5 opacity-75 mb-0">
+                Semester: <strong class="text-white" th:text="${user.currentSemester}">1</strong> &nbsp;|&nbsp; 
+                Department: <strong class="text-white" th:text="${user.department != null ? user.department.name : 'Not Assigned'}">CS</strong>
+            </p>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-lg-8">
+                <div class="card h-100">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span class="fs-5"><i class="bi bi-grid text-primary me-2"></i> Student Portal</span>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row g-3">
+                            <div class="col-sm-4">
+                                <button class="btn btn-light w-100 btn-custom text-primary border"><i class="bi bi-journal-text"></i> Assignments</button>
+                            </div>
+                            <div class="col-sm-4">
+                                <button class="btn btn-light w-100 btn-custom text-success border"><i class="bi bi-calendar-check"></i> Attendance</button>
+                            </div>
+                            <div class="col-sm-4">
+                                <button class="btn btn-light w-100 btn-custom text-info border"><i class="bi bi-folder2-open"></i> Materials</button>
+                            </div>
+                            <div class="col-sm-4">
+                                <button class="btn btn-light w-100 btn-custom text-warning border"><i class="bi bi-calendar-event"></i> Events</button>
+                            </div>
+                            <div class="col-sm-4">
+                                <button class="btn btn-light w-100 btn-custom text-danger border"><i class="bi bi-exclamation-triangle"></i> Helpdesk</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-header bg-white border-0 pt-4 pb-2">
+                        <h5 class="fw-bold m-0"><i class="bi bi-bell-fill text-warning me-2"></i> Recent Notices</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item" th:each="notice : ${notices}">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <strong class="text-dark" th:text="${notice.title}">Notice Title</strong>
+                                    <small class="text-muted" th:text="${#temporals.format(notice.publishDate, 'dd MMM')}">01 Jan</small>
+                                </div>
+                                <p class="mb-0 text-muted small text-truncate" th:text="${notice.content}">Content</p>
+                            </li>
+                            <li class="list-group-item text-center text-muted py-4" th:if="${#lists.isEmpty(notices)}">
+                                <i class="bi bi-inbox fs-2 d-block mb-2"></i> No new notices.
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

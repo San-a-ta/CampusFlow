@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CampusFlow - Login</title>
+    <!-- Modern Font: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Bootstrap 5 & Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4361ee;
+            --primary-hover: #3a56d4;
+            --secondary: #f8f9fa;
+            --dark: #0f172a;
+            --text-main: #334155;
+            --text-muted: #64748b;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .login-wrapper {
+            width: 100%;
+            max-width: 1000px;
+            display: flex;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+            overflow: hidden;
+            margin: 20px;
+        }
+        .login-form-section {
+            padding: 60px 50px;
+            width: 50%;
+        }
+        .login-info-section {
+            width: 50%;
+            background: linear-gradient(135deg, var(--primary), #7209b7);
+            padding: 60px 50px;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .login-info-section::before {
+            content: '';
+            position: absolute;
+            top: -50%; left: -50%; width: 200%; height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 60%);
+            z-index: 0;
+        }
+        .login-info-content { position: relative; z-index: 1; }
+        
+        .brand {
+            display: flex;
+            align-items: center;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--dark);
+            margin-bottom: 40px;
+        }
+        .brand i { color: var(--primary); font-size: 1.8rem; margin-right: 10px; }
+        
+        .form-control {
+            padding: 12px 16px;
+            border-radius: 10px;
+            border: 1px solid #e2e8f0;
+            background-color: #f8fafc;
+            font-size: 0.95rem;
+            transition: 0.3s;
+        }
+        .form-control:focus {
+            background-color: white;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(67, 97, 238, 0.1);
+        }
+        .form-label { font-weight: 500; font-size: 0.9rem; margin-bottom: 8px; color: var(--text-main); }
+        
+        .btn-primary {
+            background-color: var(--primary);
+            border-color: var(--primary);
+            padding: 12px;
+            border-radius: 10px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        .btn-primary:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 15px rgba(67, 97, 238, 0.25);
+        }
+        
+        .demo-accounts {
+            background: #f1f5f9;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            margin-top: 30px;
+            border: 1px dashed #cbd5e1;
+        }
+        
+        @media (max-width: 768px) {
+            .login-info-section { display: none; }
+            .login-form-section { width: 100%; padding: 40px 30px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-wrapper">
+        <div class="login-form-section">
+            <div class="brand">
+                <i class="bi bi-mortarboard-fill"></i> CampusFlow
+            </div>
+            
+            <h3 class="fw-bold text-dark mb-2">Welcome back</h3>
+            <p class="text-muted mb-4">Please enter your credentials to access your account.</p>
+            
+            <div th:if="${param.error}" class="alert alert-danger bg-danger text-white border-0 rounded-3 mb-4 d-flex align-items-center">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i> Invalid email or password.
+            </div>
+            <div th:if="${param.logout}" class="alert alert-success bg-success text-white border-0 rounded-3 mb-4 d-flex align-items-center">
+                <i class="bi bi-check-circle-fill me-2"></i> You have been logged out.
+            </div>
+            
+            <form th:action="@{/login}" method="post">
+                <div class="mb-4">
+                    <label class="form-label">Email Address</label>
+                    <input type="email" name="username" class="form-control" required autofocus placeholder="e.g., admin@campusflow.com"/>
+                </div>
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <label class="form-label m-0">Password</label>
+                        <a href="#" class="text-primary text-decoration-none small fw-medium">Forgot password?</a>
+                    </div>
+                    <input type="password" name="password" class="form-control mt-2" required placeholder="Enter your password"/>
+                </div>
+                <div class="mb-4 form-check">
+                    <input type="checkbox" class="form-check-input" id="rememberMe">
+                    <label class="form-check-label text-muted small" for="rememberMe">Remember me for 30 days</label>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Sign In</button>
+            </form>
+            
+            <div class="demo-accounts text-muted">
+                <p class="fw-semibold mb-2 text-dark"><i class="bi bi-info-circle me-1"></i> Demo Credentials:</p>
+                <div class="d-flex justify-content-between mb-1"><span>Admin:</span> <code class="bg-white px-2 py-1 rounded border">admin@campusflow.com</code> <code>admin123</code></div>
+                <div class="d-flex justify-content-between mb-1"><span>HOD:</span> <code class="bg-white px-2 py-1 rounded border">hod@campusflow.com</code> <code>hod123</code></div>
+                <div class="d-flex justify-content-between mb-1"><span>Faculty:</span> <code class="bg-white px-2 py-1 rounded border">faculty@campusflow.com</code> <code>faculty123</code></div>
+                <div class="d-flex justify-content-between"><span>Student:</span> <code class="bg-white px-2 py-1 rounded border">student@campusflow.com</code> <code>student123</code></div>
+            </div>
+        </div>
+        
+        <div class="login-info-section">
+            <div class="login-info-content">
+                <h1 class="display-5 fw-bold mb-4" style="line-height: 1.2;">The smartest way<br>to manage your<br>campus.</h1>
+                <p class="fs-5 opacity-75 mb-5 fw-light">A unified platform integrating academics, administration, and student life into one seamless experience.</p>
+                
+                <div class="d-flex align-items-center mt-5">
+                    <div class="d-flex">
+                        <img src="https://i.pravatar.cc/100?img=1" class="rounded-circle border border-2 border-white" style="width: 40px; margin-left: -0px;">
+                        <img src="https://i.pravatar.cc/100?img=2" class="rounded-circle border border-2 border-white" style="width: 40px; margin-left: -15px;">
+                        <img src="https://i.pravatar.cc/100?img=3" class="rounded-circle border border-2 border-white" style="width: 40px; margin-left: -15px;">
+                    </div>
+                    <div class="ms-3">
+                        <div class="fw-semibold">Trusted by 5,000+</div>
+                        <div class="small opacity-75">institutions worldwide</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/fragments :: head('Notices')}">
+</head>
+<body>
+    <div class="wrapper">
+        <div th:replace="~{admin/fragments :: sidebar('notices')}"></div>
+        
+        <div class="main-panel">
+            <div th:replace="~{admin/fragments :: navbar('Notices & Announcements')}"></div>
+
+            <div class="content-padding">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h2 class="page-title">Notice Board</h2>
+                        <p class="text-muted mb-0">Broadcast announcements across the campus</p>
+                    </div>
+                    <button class="btn btn-primary shadow-sm"><i class="bi bi-megaphone-fill me-1"></i> Publish Notice</button>
+                </div>
+                
+                <div class="card">
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead>
+                                    <tr>
+                                        <th style="padding-left: 24px;">Notice Title</th>
+                                        <th>Published On</th>
+                                        <th>Audience</th>
+                                        <th class="text-end" style="padding-right: 24px;">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="notice : ${notices}">
+                                        <td style="padding-left: 24px;">
+                                            <div class="d-flex align-items-center">
+                                                <div class="bg-primary bg-opacity-10 rounded text-primary d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+                                                    <i class="bi bi-bell fs-5"></i>
+                                                </div>
+                                                <div>
+                                                    <div class="fw-semibold text-dark" th:text="${notice.title}">Welcome</div>
+                                                    <small class="text-muted text-truncate d-inline-block" style="max-width: 300px;" th:text="${notice.content}">Description goes here</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="text-dark fw-medium" th:text="${#temporals.format(notice.publishDate, 'MMM dd, yyyy')}">Jan 01, 2023</span>
+                                            <br><small class="text-muted" th:text="${#temporals.format(notice.publishDate, 'hh:mm a')}">10:00 AM</small>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-light border text-dark" th:if="${notice.department != null}">
+                                                <i class="bi bi-diagram-3 text-muted me-1"></i> <span th:text="${notice.department.name}">CS</span>
+                                            </span>
+                                            <span class="badge badge-soft-primary" th:if="${notice.department == null}">
+                                                <i class="bi bi-globe me-1"></i> Campus-wide
+                                            </span>
+                                        </td>
+                                        <td class="text-end" style="padding-right: 24px;">
+                                            <button class="btn btn-light btn-action text-primary me-1" title="Edit"><i class="bi bi-pencil-square"></i></button>
+                                            <button class="btn btn-light btn-action text-danger" title="Delete"><i class="bi bi-trash3"></i></button>
+                                        </td>
+                                    </tr>
+                                    <tr th:if="${#lists.isEmpty(notices)}">
+                                        <td colspan="4" class="text-center py-5">
+                                            <div class="text-muted">
+                                                <i class="bi bi-megaphone fs-1 d-block mb-3 opacity-50"></i>
+                                                <h5 class="fw-semibold">No announcements</h5>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
