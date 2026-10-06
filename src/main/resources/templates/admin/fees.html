@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{admin/fragments :: head('Fees & Finance')}">
+</head>
+
+<body>
+
+<div class="wrapper">
+
+    <!-- SIDEBAR -->
+    <div th:replace="~{admin/fragments :: sidebar('fees')}"></div>
+
+    <!-- MAIN -->
+    <div class="main-panel">
+
+        <div th:replace="~{admin/fragments :: navbar('Fees & Finance')}"></div>
+
+        <div class="content-padding">
+
+            <!-- HEADER -->
+            <div class="page-header">
+                <div>
+                    <h2 class="page-title">Fees & Finance</h2>
+                    <p class="page-subtitle">
+                        Manage student fees, payments and outstanding balances
+                    </p>
+                </div>
+
+                <button class="primary-btn" onclick="openPaymentModal()">
+                    <i class="bi bi-plus-lg"></i>
+                    Record Payment
+                </button>
+            </div>
+
+
+            <!-- STATS -->
+            <div class="stats-grid">
+
+                <div class="stat-card">
+                    <div class="stat-icon blue">
+                        <i class="bi bi-wallet2"></i>
+                    </div>
+                    <div>
+                        <span>Total Fees</span>
+                        <h3>₹12,45,000</h3>
+                        <small>For current academic year</small>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon green">
+                        <i class="bi bi-check-circle"></i>
+                    </div>
+                    <div>
+                        <span>Collected</span>
+                        <h3>₹9,82,500</h3>
+                        <small>78.9% collected</small>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon orange">
+                        <i class="bi bi-clock-history"></i>
+                    </div>
+                    <div>
+                        <span>Pending</span>
+                        <h3>₹2,62,500</h3>
+                        <small>Needs attention</small>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon red">
+                        <i class="bi bi-exclamation-circle"></i>
+                    </div>
+                    <div>
+                        <span>Overdue</span>
+                        <h3>₹87,500</h3>
+                        <small>Past due date</small>
+                    </div>
+                </div>
+
+            </div>
+
+
+            <!-- COLLECTION PROGRESS -->
+            <div class="finance-card progress-card">
+
+                <div class="card-heading">
+                    <div>
+                        <h4>Fee Collection Progress</h4>
+                        <p>Current academic year</p>
+                    </div>
+
+                    <strong>78.9%</strong>
+                </div>
+
+                <div class="progress">
+                    <div class="progress-bar" style="width:78.9%"></div>
+                </div>
+
+                <div class="progress-info">
+                    <span>₹9,82,500 collected</span>
+                    <span>₹12,45,000 total</span>
+                </div>
+
+            </div>
+
+
+            <!-- STUDENT FEES -->
+            <div class="finance-card">
+
+                <div class="table-header">
+
+                    <div>
+                        <h4>Student Fee Records</h4>
+                        <p>Track payments and outstanding balances</p>
+                    </div>
+
+                    <div class="table-tools">
+
+                        <div class="search-box">
+                            <i class="bi bi-search"></i>
+                            <input
+                                type="text"
+                                id="feeSearch"
+                                placeholder="Search student..."
+                                onkeyup="filterFees()">
+                        </div>
+
+                        <select id="statusFilter" onchange="filterFees()">
+                            <option value="all">All Status</option>
+                            <option value="paid">Paid</option>
+                            <option value="pending">Pending</option>
+                            <option value="overdue">Overdue</option>
+                        </select>
+
+                    </div>
+
+                </div>
+
+
+                <div class="table-responsive">
+
+                    <table class="fee-table">
+
+                        <thead>
+                        <tr>
+                            <th>Student</th>
+                            <th>Department</th>
+                            <th>Total Fee</th>
+                            <th>Paid</th>
+                            <th>Balance</th>
+                            <th>Due Date</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                        </thead>
+
+                        <tbody id="feeTable">
+
+                        <tr data-status="paid">
+                            <td>
+                                <div class="student-cell">
+                                    <div class="avatar">AS</div>
+                                    <div>
+                                        <strong>Aarav Sharma</strong>
+                                        <small>CF2024001</small>
+                                    </div>
+                                </div>
+                            </td>
+
+                            <td>Computer Science</td>
+                            <td>₹75,000</td>
+                            <td>₹75,000</td>
+                            <td>₹0</td>
+                            <td>15 Sep 2026</td>
+
+                            <td>
+                                <span class="status paid">
+                                    <i class="bi bi-check-circle-fill"></i>
+                                    Paid
+                                </span>
+                            </td>
+
+                            <td>
+                                <button class="icon-btn" onclick="viewReceipt('Aarav Sharma')">
+                                    <i class="bi bi-receipt"></i>
+                                </button>
+                            </td>
+                        </tr>
+
+
+                        <tr data-status="pending">
+                            <td>
+                                <div class="student-cell">
+                                    <div class="avatar purple">PS</div>
+                                    <div>
+                                        <strong>Priya Shah</strong>
+                                        <small>CF2024002</small>
+                                    </div>
+                                </div>
+                            </td>
+
+                            <td>Information Technology</td>
+                            <td>₹70,000</td>
+                            <td>₹50,000</td>
+                            <td>₹20,000</td>
+                            <td>20 Oct 2026</td>
+
+                            <td>
+                                <span class="status pending">
+                                    <i class="bi bi-clock-fill"></i>
+                                    Pending
+                                </span>
+                            </td>
+
+                            <td>
+                                <button class="icon-btn" onclick="recordStudentPayment('Priya Shah')">
+                                    <i class="bi bi-plus-circle"></i>
+                                </button>
+                            </td>
+                        </tr>
+
+
+                        <tr data-status="overdue">
+                            <td>
+                                <div class="student-cell">
+                                    <div class="avatar orange">RK</div>
+                                    <div>
+                                        <strong>Rohan Kulkarni</strong>
+                                        <small>CF2024003</small>
+                                    </div>
+                                </div>
+                            </td>
+
+                            <td>Electronics</td>
+                            <td>₹68,000</td>
+                            <td>₹40,000</td>
+                            <td>₹28,000</td>
+                            <td>30 Aug 2026</td>
+
+                            <td>
+                                <span class="status overdue">
+                                    <i class="bi bi-exclamation-circle-fill"></i>
+                                    Overdue
+                                </span>
+                            </td>
+
+                            <td>
+                                <button class="icon-btn danger" onclick="sendReminder('Rohan Kulkarni')">
+                                    <i class="bi bi-bell"></i>
+                                </button>
+                            </td>
+                        </tr>
+
+
+                        <tr data-status="paid">
+                            <td>
+                                <div class="student-cell">
+                                    <div class="avatar green">NK</div>
+                                    <div>
+                                        <strong>Neha Kapoor</strong>
+                                        <small>CF2024004</small>
+                                    </div>
+                                </div>
+                            </td>
+
+                            <td>Computer Engineering</td>
+                            <td>₹72,000</td>
+                            <td>₹72,000</td>
+                            <td>₹0</td>
+                            <td>12 Sep 2026</td>
+
+                            <td>
+                                <span class="status paid">
+                                    <i class="bi bi-check-circle-fill"></i>
+                                    Paid
+                                </span>
+                            </td>
+
+                            <td>
+                                <button class="icon-btn" onclick="viewReceipt('Neha Kapoor')">
+                                    <i class="bi bi-receipt"></i>
+                                </button>
+                            </td>
+                        </tr>
+
+
+                        <tr data-status="pending">
+                            <td>
+                                <div class="student-cell">
+                                    <div class="avatar pink">AM</div>
+                                    <div>
+                                        <strong>Aditya Mehta</strong>
+                                        <small>CF2024005</small>
+                                    </div>
+                                </div>
+                            </td>
+
+                            <td>Mechanical Engineering</td>
+                            <td>₹65,000</td>
+                            <td>₹45,000</td>
+                            <td>₹20,000</td>
+                            <td>25 Oct 2026</td>
+
+                            <td>
+                                <span class="status pending">
+                                    <i class="bi bi-clock-fill"></i>
+                                    Pending
+                                </span>
+                            </td>
+
+                            <td>
+                                <button class="icon-btn" onclick="recordStudentPayment('Aditya Mehta')">
+                                    <i class="bi bi-plus-circle"></i>
+                                </button>
+                            </td>
+                        </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+<!-- PAYMENT MODAL -->
+<div class="modal-overlay" id="paymentModal">
+
+    <div class="modal-box">
+
+        <div class="modal-header">
+            <div>
+                <h3>Record Payment</h3>
+                <p>Add a new student fee payment</p>
+            </div>
+
+            <button onclick="closePaymentModal()">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+
+
+        <div class="form-grid">
+
+            <div class="form-group">
+                <label>Student Name</label>
+                <input type="text" placeholder="Enter student name">
+            </div>
+
+            <div class="form-group">
+                <label>Student ID</label>
+                <input type="text" placeholder="CF2024XXX">
+            </div>
+
+            <div class="form-group">
+                <label>Amount</label>
+                <input type="number" placeholder="₹ Amount">
+            </div>
+
+            <div class="form-group">
+                <label>Payment Method</label>
+
+                <select>
+                    <option>Online</option>
+                    <option>Cash</option>
+                    <option>Bank Transfer</option>
+                    <option>UPI</option>
+                </select>
+
+            </div>
+
+            <div class="form-group full">
+                <label>Transaction ID</label>
+                <input type="text" placeholder="Enter transaction/reference ID">
+            </div>
+
+        </div>
+
+
+        <div class="modal-actions">
+
+            <button class="cancel-btn" onclick="closePaymentModal()">
+                Cancel
+            </button>
+
+            <button class="primary-btn" onclick="savePayment()">
+                <i class="bi bi-check-lg"></i>
+                Save Payment
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<style>
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    background: #f6f8fc;
+}
+
+
+/* HEADER */
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 28px;
+}
+
+.page-title {
+    font-size: 28px;
+    font-weight: 700;
+    color: #172033;
+    margin-bottom: 6px;
+}
+
+.page-subtitle {
+    color: #7b8498;
+    margin: 0;
+}
+
+
+/* BUTTON */
+
+.primary-btn {
+    border: none;
+    background: #2563eb;
+    color: white;
+    padding: 11px 18px;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: .2s;
+}
+
+.primary-btn:hover {
+    background: #1d4ed8;
+    transform: translateY(-1px);
+}
+
+
+/* STATS */
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 18px;
+    margin-bottom: 20px;
+}
+
+.stat-card {
+    background: white;
+    border: 1px solid #e9edf5;
+    border-radius: 15px;
+    padding: 21px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    box-shadow: 0 4px 18px rgba(25, 35, 55, .04);
+}
+
+.stat-card span {
+    font-size: 13px;
+    color: #8992a6;
+}
+
+.stat-card h3 {
+    margin: 5px 0;
+    color: #172033;
+    font-size: 22px;
+}
+
+.stat-card small {
+    color: #9ba3b4;
+}
+
+.stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 21px;
+}
+
+.stat-icon.blue {
+    background: #eaf2ff;
+    color: #2563eb;
+}
+
+.stat-icon.green {
+    background: #e9f9f0;
+    color: #16a34a;
+}
+
+.stat-icon.orange {
+    background: #fff4e5;
+    color: #ea8a00;
+}
+
+.stat-icon.red {
+    background: #fff0f0;
+    color: #dc2626;
+}
+
+
+/* CARD */
+
+.finance-card {
+    background: white;
+    border: 1px solid #e9edf5;
+    border-radius: 16px;
+    margin-bottom: 22px;
+    box-shadow: 0 4px 18px rgba(25, 35, 55, .035);
+    overflow: hidden;
+}
+
+
+/* PROGRESS */
+
+.progress-card {
+    padding: 23px;
+}
+
+.card-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.card-heading h4 {
+    margin: 0;
+    color: #172033;
+}
+
+.card-heading p {
+    margin: 5px 0 0;
+    color: #929aad;
+    font-size: 13px;
+}
+
+.card-heading strong {
+    font-size: 20px;
+    color: #2563eb;
+}
+
+.progress {
+    height: 9px;
+    background: #edf1f7;
+    border-radius: 20px;
+    overflow: hidden;
+    margin-top: 20px;
+}
+
+.progress-bar {
+    height: 100%;
+    background: #2563eb;
+    border-radius: 20px;
+}
+
+.progress-info {
+    display: flex;
+    justify-content: space-between;
+    color: #8992a6;
+    font-size: 12px;
+    margin-top: 9px;
+}
+
+
+/* TABLE HEADER */
+
+.table-header {
+    padding: 22px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+}
+
+.table-header h4 {
+    margin: 0;
+    color: #172033;
+}
+
+.table-header p {
+    margin: 5px 0 0;
+    color: #929aad;
+    font-size: 13px;
+}
+
+.table-tools {
+    display: flex;
+    gap: 10px;
+}
+
+.search-box {
+    display: flex;
+    align-items: center;
+    border: 1px solid #dfe4ed;
+    border-radius: 9px;
+    padding: 0 11px;
+    background: white;
+}
+
+.search-box i {
+    color: #9aa3b5;
+}
+
+.search-box input {
+    border: none;
+    outline: none;
+    padding: 10px;
+    width: 190px;
+}
+
+.table-tools select {
+    border: 1px solid #dfe4ed;
+    border-radius: 9px;
+    padding: 0 12px;
+    background: white;
+    color: #555f72;
+    outline: none;
+}
+
+
+/* TABLE */
+
+.fee-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.fee-table th {
+    background: #fafbfe;
+    color: #8992a6;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: .3px;
+    padding: 14px 20px;
+    text-align: left;
+    border-top: 1px solid #edf0f5;
+    border-bottom: 1px solid #edf0f5;
+}
+
+.fee-table td {
+    padding: 17px 20px;
+    border-bottom: 1px solid #f0f2f6;
+    color: #4c566b;
+    font-size: 13px;
+}
+
+.fee-table tbody tr:hover {
+    background: #fafcff;
+}
+
+
+/* STUDENT */
+
+.student-cell {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+}
+
+.student-cell strong {
+    display: block;
+    color: #252e40;
+}
+
+.student-cell small {
+    display: block;
+    color: #9aa3b4;
+    margin-top: 3px;
+}
+
+.avatar {
+    width: 37px;
+    height: 37px;
+    border-radius: 10px;
+    background: #eaf2ff;
+    color: #2563eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 12px;
+}
+
+.avatar.purple {
+    background: #f0ebff;
+    color: #7c3aed;
+}
+
+.avatar.orange {
+    background: #fff1df;
+    color: #ea8a00;
+}
+
+.avatar.green {
+    background: #e8f9ef;
+    color: #16a34a;
+}
+
+.avatar.pink {
+    background: #ffeaf2;
+    color: #db2777;
+}
+
+
+/* STATUS */
+
+.status {
+    padding: 6px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.status.paid {
+    background: #eaf9f0;
+    color: #15803d;
+}
+
+.status.pending {
+    background: #fff5df;
+    color: #c77700;
+}
+
+.status.overdue {
+    background: #fff0f0;
+    color: #dc2626;
+}
+
+
+/* ACTION */
+
+.icon-btn {
+    width: 34px;
+    height: 34px;
+    border: 1px solid #e2e6ee;
+    background: white;
+    border-radius: 8px;
+    color: #2563eb;
+    cursor: pointer;
+}
+
+.icon-btn:hover {
+    background: #eff5ff;
+}
+
+.icon-btn.danger {
+    color: #dc2626;
+}
+
+
+/* MODAL */
+
+.modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 27, 40, .45);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.modal-box {
+    width: 100%;
+    max-width: 600px;
+    background: white;
+    border-radius: 18px;
+    padding: 25px;
+    box-shadow: 0 20px 60px rgba(0,0,0,.18);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 25px;
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: #172033;
+}
+
+.modal-header p {
+    color: #929aad;
+    margin: 5px 0 0;
+    font-size: 13px;
+}
+
+.modal-header button {
+    border: none;
+    background: #f4f6fa;
+    width: 35px;
+    height: 35px;
+    border-radius: 9px;
+    cursor: pointer;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 17px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+
+.form-group.full {
+    grid-column: 1 / -1;
+}
+
+.form-group label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #4b5568;
+}
+
+.form-group input,
+.form-group select {
+    border: 1px solid #dfe4ed;
+    border-radius: 9px;
+    padding: 11px 12px;
+    outline: none;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    border-color: #2563eb;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 25px;
+}
+
+.cancel-btn {
+    border: 1px solid #dfe4ed;
+    background: white;
+    padding: 10px 17px;
+    border-radius: 9px;
+    cursor: pointer;
+}
+
+
+/* RESPONSIVE */
+
+@media (max-width: 1100px) {
+
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .table-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+}
+
+@media (max-width: 700px) {
+
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+
+    .table-tools {
+        width: 100%;
+        flex-direction: column;
+    }
+
+    .search-box input {
+        width: 100%;
+    }
+
+    .table-responsive {
+        overflow-x: auto;
+    }
+
+    .fee-table {
+        min-width: 950px;
+    }
+
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .form-group.full {
+        grid-column: auto;
+    }
+
+}
+
+</style>
+
+
+<script>
+
+function filterFees() {
+
+    const search =
+        document.getElementById("feeSearch")
+            .value.toLowerCase();
+
+    const status =
+        document.getElementById("statusFilter")
+            .value;
+
+    const rows =
+        document.querySelectorAll("#feeTable tr");
+
+    rows.forEach(row => {
+
+        const text =
+            row.innerText.toLowerCase();
+
+        const rowStatus =
+            row.dataset.status;
+
+        const matchesSearch =
+            text.includes(search);
+
+        const matchesStatus =
+            status === "all" ||
+            rowStatus === status;
+
+        row.style.display =
+            matchesSearch && matchesStatus
+                ? ""
+                : "none";
+
+    });
+}
+
+
+function openPaymentModal() {
+
+    document.getElementById("paymentModal")
+        .style.display = "flex";
+
+}
+
+
+function closePaymentModal() {
+
+    document.getElementById("paymentModal")
+        .style.display = "none";
+
+}
+
+
+function savePayment() {
+
+    alert(
+        "Payment recorded successfully! Backend payment processing can be connected later."
+    );
+
+    closePaymentModal();
+
+}
+
+
+function viewReceipt(student) {
+
+    alert(
+        "Opening payment receipt for " +
+        student
+    );
+
+}
+
+
+function recordStudentPayment(student) {
+
+    openPaymentModal();
+
+}
+
+
+function sendReminder(student) {
+
+    alert(
+        "Payment reminder prepared for " +
+        student
+    );
+
+}
+
+
+window.onclick = function(event) {
+
+    const modal =
+        document.getElementById("paymentModal");
+
+    if (event.target === modal) {
+        closePaymentModal();
+    }
+
+};
+
+</script>
+
+</body>
+</html>

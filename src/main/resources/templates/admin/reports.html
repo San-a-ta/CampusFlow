@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{admin/fragments :: head('Reports')}">
+</head>
+
+<body>
+
+<div class="wrapper">
+
+    <!-- Sidebar -->
+    <div th:replace="~{admin/fragments :: sidebar('reports')}"></div>
+
+    <div class="main-panel">
+
+        <!-- Navbar -->
+        <div th:replace="~{admin/fragments :: navbar('Reports & Analytics')}"></div>
+
+        <div class="content-padding">
+
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+
+                <div>
+                    <h2 class="page-title">Reports & Analytics</h2>
+                    <p class="text-muted mb-0">
+                        Monitor campus performance and generate reports
+                    </p>
+                </div>
+
+                <button class="btn btn-primary shadow-sm" onclick="generateReport()">
+                    <i class="bi bi-file-earmark-arrow-down me-1"></i>
+                    Generate Report
+                </button>
+
+            </div>
+
+
+            <!-- Overview Cards -->
+            <div class="row g-4 mb-4">
+
+                <div class="col-md-6 col-xl-3">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-body">
+
+                            <div class="d-flex justify-content-between align-items-start">
+
+                                <div>
+                                    <p class="text-muted mb-1">
+                                        Total Students
+                                    </p>
+
+                                    <h3 class="fw-bold mb-0"
+                                        th:text="${totalStudents ?: 0}">
+                                        0
+                                    </h3>
+                                </div>
+
+                                <div class="bg-primary bg-opacity-10 text-primary rounded p-3">
+                                    <i class="bi bi-people fs-4"></i>
+                                </div>
+
+                            </div>
+
+                            <small class="text-muted">
+                                Registered students
+                            </small>
+
+                        </div>
+                    </div>
+                </div>
+
+
+                <div class="col-md-6 col-xl-3">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-body">
+
+                            <div class="d-flex justify-content-between align-items-start">
+
+                                <div>
+                                    <p class="text-muted mb-1">
+                                        Faculty Members
+                                    </p>
+
+                                    <h3 class="fw-bold mb-0"
+                                        th:text="${totalFaculty ?: 0}">
+                                        0
+                                    </h3>
+                                </div>
+
+                                <div class="bg-success bg-opacity-10 text-success rounded p-3">
+                                    <i class="bi bi-person-badge fs-4"></i>
+                                </div>
+
+                            </div>
+
+                            <small class="text-muted">
+                                Teaching staff
+                            </small>
+
+                        </div>
+                    </div>
+                </div>
+
+
+                <div class="col-md-6 col-xl-3">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-body">
+
+                            <div class="d-flex justify-content-between align-items-start">
+
+                                <div>
+                                    <p class="text-muted mb-1">
+                                        Departments
+                                    </p>
+
+                                    <h3 class="fw-bold mb-0"
+                                        th:text="${totalDepartments ?: 0}">
+                                        0
+                                    </h3>
+                                </div>
+
+                                <div class="bg-warning bg-opacity-10 text-warning rounded p-3">
+                                    <i class="bi bi-diagram-3 fs-4"></i>
+                                </div>
+
+                            </div>
+
+                            <small class="text-muted">
+                                Active departments
+                            </small>
+
+                        </div>
+                    </div>
+                </div>
+
+
+                <div class="col-md-6 col-xl-3">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-body">
+
+                            <div class="d-flex justify-content-between align-items-start">
+
+                                <div>
+                                    <p class="text-muted mb-1">
+                                        Complaints
+                                    </p>
+
+                                    <h3 class="fw-bold mb-0"
+                                        th:text="${openComplaints ?: 0}">
+                                        0
+                                    </h3>
+                                </div>
+
+                                <div class="bg-danger bg-opacity-10 text-danger rounded p-3">
+                                    <i class="bi bi-exclamation-circle fs-4"></i>
+                                </div>
+
+                            </div>
+
+                            <small class="text-muted">
+                                Recorded complaints
+                            </small>
+
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+
+            <!-- Report Categories -->
+            <div class="row g-4">
+
+                <!-- Academic Reports -->
+                <div class="col-lg-6">
+
+                    <div class="card border-0 shadow-sm h-100">
+
+                        <div class="card-header bg-white border-0 pt-4 px-4">
+
+                            <div class="d-flex align-items-center">
+
+                                <div class="bg-primary bg-opacity-10 text-primary rounded p-2 me-3">
+                                    <i class="bi bi-mortarboard fs-4"></i>
+                                </div>
+
+                                <div>
+                                    <h5 class="fw-bold mb-0">
+                                        Academic Reports
+                                    </h5>
+
+                                    <small class="text-muted">
+                                        Academic performance and records
+                                    </small>
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                        <div class="card-body px-4">
+
+                            <div class="report-item">
+                                <div>
+                                    <strong>Student Performance</strong>
+                                    <small class="d-block text-muted">
+                                        View student academic performance
+                                    </small>
+                                </div>
+
+                                <button class="btn btn-light btn-sm"
+                                        onclick="showComingSoon()">
+                                    <i class="bi bi-arrow-right"></i>
+                                </button>
+                            </div>
+
+
+                            <div class="report-item">
+                                <div>
+                                    <strong>Attendance Report</strong>
+                                    <small class="d-block text-muted">
+                                        Analyze attendance records
+                                    </small>
+                                </div>
+
+                                <button class="btn btn-light btn-sm"
+                                        onclick="showComingSoon()">
+                                    <i class="bi bi-arrow-right"></i>
+                                </button>
+                            </div>
+
+
+                            <div class="report-item">
+                                <div>
+                                    <strong>Subject Report</strong>
+                                    <small class="d-block text-muted">
+                                        Subject-wise academic data
+                                    </small>
+                                </div>
+
+                                <button class="btn btn-light btn-sm"
+                                        onclick="showComingSoon()">
+                                    <i class="bi bi-arrow-right"></i>
+                                </button>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- Student Reports -->
+                <div class="col-lg-6">
+
+                    <div class="card border-0 shadow-sm h-100">
+
+                        <div class="card-header bg-white border-0 pt-4 px-4">
+
+                            <div class="d-flex align-items-center">
+
+                                <div class="bg-success bg-opacity-10 text-success rounded p-2 me-3">
+                                    <i class="bi bi-people fs-4"></i>
+                                </div>
+
+                                <div>
+                                    <h5 class="fw-bold mb-0">
+                                        Student Reports
+                                    </h5>
+
+                                    <small class="text-muted">
+                                        Student records and statistics
+                                    </small>
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                        <div class="card-body px-4">
+
+                            <div class="report-item">
+                                <div>
+                                    <strong>Student Directory</strong>
+                                    <small class="d-block text-muted">
+                                        Complete student records
+                                    </small>
+                                </div>
+
+                                <a href="/admin/students"
+                                   class="btn btn-light btn-sm">
+                                    <i class="bi bi-arrow-right"></i>
+                                </a>
+                            </div>
+
+
+                            <div class="report-item">
+                                <div>
+                                    <strong>Department-wise Students</strong>
+                                    <small class="d-block text-muted">
+                                        Students grouped by department
+                                    </small>
+                                </div>
+
+                                <a href="/admin/departments"
+                                   class="btn btn-light btn-sm">
+                                    <i class="bi bi-arrow-right"></i>
+                                </a>
+                            </div>
+
+
+                            <div class="report-item">
+                                <div>
+                                    <strong>Faculty Directory</strong>
+                                    <small class="d-block text-muted">
+                                        Faculty and teaching staff
+                                    </small>
+                                </div>
+
+                                <a href="/admin/faculty"
+                                   class="btn btn-light btn-sm">
+                                    <i class="bi bi-arrow-right"></i>
+                                </a>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- Campus Reports -->
+                <div class="col-lg-6">
+
+                    <div class="card border-0 shadow-sm">
+
+                        <div class="card-header bg-white border-0 pt-4 px-4">
+
+                            <div class="d-flex align-items-center">
+
+                                <div class="bg-warning bg-opacity-10 text-warning rounded p-2 me-3">
+                                    <i class="bi bi-building fs-4"></i>
+                                </div>
+
+                                <div>
+                                    <h5 class="fw-bold mb-0">
+                                        Campus Reports
+                                    </h5>
+
+                                    <small class="text-muted">
+                                        Campus activity and management
+                                    </small>
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                        <div class="card-body px-4">
+
+                            <div class="report-item">
+                                <div>
+                                    <strong>Complaints</strong>
+                                    <small class="d-block text-muted">
+                                        Review campus complaints
+                                    </small>
+                                </div>
+
+                                <a href="/admin/complaints"
+                                   class="btn btn-light btn-sm">
+                                    <i class="bi bi-arrow-right"></i>
+                                </a>
+                            </div>
+
+
+                            <div class="report-item">
+                                <div>
+                                    <strong>Notices</strong>
+                                    <small class="d-block text-muted">
+                                        Published campus announcements
+                                    </small>
+                                </div>
+
+                                <a href="/admin/notices"
+                                   class="btn btn-light btn-sm">
+                                    <i class="bi bi-arrow-right"></i>
+                                </a>
+                            </div>
+
+
+                            <div class="report-item">
+                                <div>
+                                    <strong>Events</strong>
+                                    <small class="d-block text-muted">
+                                        Campus events and activities
+                                    </small>
+                                </div>
+
+                                <a href="/admin/events"
+                                   class="btn btn-light btn-sm">
+                                    <i class="bi bi-arrow-right"></i>
+                                </a>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- Export -->
+                <div class="col-lg-6">
+
+                    <div class="card border-0 shadow-sm">
+
+                        <div class="card-body p-4">
+
+                            <div class="d-flex align-items-center mb-3">
+
+                                <div class="bg-info bg-opacity-10 text-info rounded p-2 me-3">
+                                    <i class="bi bi-download fs-4"></i>
+                                </div>
+
+                                <div>
+                                    <h5 class="fw-bold mb-0">
+                                        Export Data
+                                    </h5>
+
+                                    <small class="text-muted">
+                                        Download campus information
+                                    </small>
+                                </div>
+
+                            </div>
+
+                            <div class="d-flex gap-2 flex-wrap">
+
+                                <button class="btn btn-outline-primary"
+                                        onclick="showComingSoon()">
+                                    <i class="bi bi-filetype-csv me-1"></i>
+                                    CSV
+                                </button>
+
+                                <button class="btn btn-outline-danger"
+                                        onclick="showComingSoon()">
+                                    <i class="bi bi-filetype-pdf me-1"></i>
+                                    PDF
+                                </button>
+
+                                <button class="btn btn-outline-success"
+                                        onclick="showComingSoon()">
+                                    <i class="bi bi-file-earmark-excel me-1"></i>
+                                    Excel
+                                </button>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<style>
+
+.report-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px 0;
+    border-bottom: 1px solid #edf0f4;
+}
+
+.report-item:last-child {
+    border-bottom: none;
+}
+
+.report-item strong {
+    color: #202938;
+}
+
+.report-item small {
+    margin-top: 3px;
+}
+
+.report-item .btn {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+</style>
+
+
+<script>
+
+function generateReport() {
+    alert("Report generation module will be connected to the database next.");
+}
+
+function showComingSoon() {
+    alert("This report will be connected to live CampusFlow data next.");
+}
+
+</script>
+
+</body>
+</html>

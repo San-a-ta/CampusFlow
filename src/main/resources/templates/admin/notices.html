@@ -1,80 +1,957 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
+
 <head th:replace="~{admin/fragments :: head('Notices')}">
 </head>
-<body>
-    <div class="wrapper">
-        <div th:replace="~{admin/fragments :: sidebar('notices')}"></div>
-        
-        <div class="main-panel">
-            <div th:replace="~{admin/fragments :: navbar('Notices & Announcements')}"></div>
 
-            <div class="content-padding">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <div>
-                        <h2 class="page-title">Notice Board</h2>
-                        <p class="text-muted mb-0">Broadcast announcements across the campus</p>
-                    </div>
-                    <button class="btn btn-primary shadow-sm"><i class="bi bi-megaphone-fill me-1"></i> Publish Notice</button>
+<body>
+
+<div class="wrapper">
+
+    <!-- SIDEBAR -->
+    <div th:replace="~{admin/fragments :: sidebar('notices')}"></div>
+
+    <!-- MAIN PANEL -->
+    <div class="main-panel">
+
+        <!-- NAVBAR -->
+        <div th:replace="~{admin/fragments :: navbar('Notices & Announcements')}"></div>
+
+        <div class="content-padding">
+
+            <!-- ========================= -->
+            <!-- PAGE HEADER -->
+            <!-- ========================= -->
+
+            <div class="d-flex justify-content-between align-items-center mb-4">
+
+                <div>
+                    <h2 class="page-title mb-1">
+                        Notice Board
+                    </h2>
+
+                    <p class="text-muted mb-0">
+                        Broadcast important announcements across the campus
+                    </p>
                 </div>
-                
-                <div class="card">
-                    <div class="card-body p-0">
-                        <div class="table-responsive">
-                            <table class="table table-hover align-middle">
-                                <thead>
-                                    <tr>
-                                        <th style="padding-left: 24px;">Notice Title</th>
-                                        <th>Published On</th>
-                                        <th>Audience</th>
-                                        <th class="text-end" style="padding-right: 24px;">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr th:each="notice : ${notices}">
-                                        <td style="padding-left: 24px;">
-                                            <div class="d-flex align-items-center">
-                                                <div class="bg-primary bg-opacity-10 rounded text-primary d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
-                                                    <i class="bi bi-bell fs-5"></i>
-                                                </div>
-                                                <div>
-                                                    <div class="fw-semibold text-dark" th:text="${notice.title}">Welcome</div>
-                                                    <small class="text-muted text-truncate d-inline-block" style="max-width: 300px;" th:text="${notice.content}">Description goes here</small>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <span class="text-dark fw-medium" th:text="${#temporals.format(notice.publishDate, 'MMM dd, yyyy')}">Jan 01, 2023</span>
-                                            <br><small class="text-muted" th:text="${#temporals.format(notice.publishDate, 'hh:mm a')}">10:00 AM</small>
-                                        </td>
-                                        <td>
-                                            <span class="badge bg-light border text-dark" th:if="${notice.department != null}">
-                                                <i class="bi bi-diagram-3 text-muted me-1"></i> <span th:text="${notice.department.name}">CS</span>
-                                            </span>
-                                            <span class="badge badge-soft-primary" th:if="${notice.department == null}">
-                                                <i class="bi bi-globe me-1"></i> Campus-wide
-                                            </span>
-                                        </td>
-                                        <td class="text-end" style="padding-right: 24px;">
-                                            <button class="btn btn-light btn-action text-primary me-1" title="Edit"><i class="bi bi-pencil-square"></i></button>
-                                            <button class="btn btn-light btn-action text-danger" title="Delete"><i class="bi bi-trash3"></i></button>
-                                        </td>
-                                    </tr>
-                                    <tr th:if="${#lists.isEmpty(notices)}">
-                                        <td colspan="4" class="text-center py-5">
-                                            <div class="text-muted">
-                                                <i class="bi bi-megaphone fs-1 d-block mb-3 opacity-50"></i>
-                                                <h5 class="fw-semibold">No announcements</h5>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
+
+                <button
+                        class="btn btn-primary shadow-sm"
+                        data-bs-toggle="modal"
+                        data-bs-target="#publishNoticeModal">
+
+                    <i class="bi bi-megaphone-fill me-1"></i>
+
+                    Publish Notice
+                </button>
+
             </div>
+
+
+            <!-- ========================= -->
+            <!-- SEARCH + FILTER -->
+            <!-- ========================= -->
+
+            <div class="card border-0 shadow-sm mb-4">
+
+                <div class="card-body">
+
+                    <div class="row g-3">
+
+                        <div class="col-md-8">
+
+                            <div class="input-group">
+
+                                <span class="input-group-text bg-white">
+                                    <i class="bi bi-search text-muted"></i>
+                                </span>
+
+                                <input
+                                        type="text"
+                                        id="noticeSearch"
+                                        class="form-control"
+                                        placeholder="Search notices...">
+
+                            </div>
+
+                        </div>
+
+                        <div class="col-md-4">
+
+                            <select
+                                    id="audienceFilter"
+                                    class="form-select">
+
+                                <option value="all">
+                                    All audiences
+                                </option>
+
+                                <option value="campus">
+                                    Campus-wide
+                                </option>
+
+                                <option value="department">
+                                    Department notices
+                                </option>
+
+                            </select>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- ========================= -->
+            <!-- NOTICE TABLE -->
+            <!-- ========================= -->
+
+            <div class="card border-0 shadow-sm">
+
+                <div class="card-body p-0">
+
+                    <div class="table-responsive">
+
+                        <table class="table table-hover align-middle mb-0">
+
+                            <thead class="table-light">
+
+                            <tr>
+
+                                <th style="padding-left: 24px;">
+                                    Notice
+                                </th>
+
+                                <th>
+                                    Published
+                                </th>
+
+                                <th>
+                                    Audience
+                                </th>
+
+                                <th
+                                        class="text-end"
+                                        style="padding-right: 24px;">
+                                    Actions
+                                </th>
+
+                            </tr>
+
+                            </thead>
+
+
+                            <tbody id="noticeTableBody">
+
+                            <!-- ========================= -->
+                            <!-- NOTICE ROW -->
+                            <!-- ========================= -->
+
+                            <tr
+                                    th:each="notice : ${notices}"
+                                    class="notice-row"
+
+                                    th:attr="
+                                    data-title=${notice.title},
+                                    data-content=${notice.content},
+                                    data-audience=${notice.department != null ? 'department' : 'campus'}
+                                    ">
+
+                                <!-- NOTICE -->
+                                <td style="padding-left: 24px;">
+
+                                    <div class="d-flex align-items-center">
+
+                                        <div
+                                                class="notice-icon
+                                                bg-primary
+                                                bg-opacity-10
+                                                text-primary
+                                                rounded
+                                                d-flex
+                                                align-items-center
+                                                justify-content-center
+                                                me-3">
+
+                                            <i class="bi bi-bell-fill"></i>
+
+                                        </div>
+
+
+                                        <div style="min-width:0;">
+
+                                            <div
+                                                    class="fw-semibold text-dark notice-title"
+                                                    th:text="${notice.title}">
+
+                                                Notice title
+
+                                            </div>
+
+
+                                            <small
+                                                    class="text-muted
+                                                    d-inline-block
+                                                    text-truncate
+                                                    notice-content"
+                                                    style="max-width: 340px;"
+                                                    th:text="${notice.content}">
+
+                                                Notice content
+
+                                            </small>
+
+                                        </div>
+
+                                    </div>
+
+                                </td>
+
+
+                                <!-- DATE -->
+                                <td>
+
+                                    <span
+                                            class="fw-medium text-dark"
+                                            th:text="${#temporals.format(notice.publishDate, 'MMM dd, yyyy')}">
+
+                                        Jan 01, 2026
+
+                                    </span>
+
+                                    <br>
+
+                                    <small
+                                            class="text-muted"
+                                            th:text="${#temporals.format(notice.publishDate, 'hh:mm a')}">
+
+                                        10:00 AM
+
+                                    </small>
+
+                                </td>
+
+
+                                <!-- AUDIENCE -->
+                                <td>
+
+                                    <!-- Department -->
+                                    <span
+                                            th:if="${notice.department != null}"
+                                            class="badge rounded-pill bg-light border text-dark px-3 py-2">
+
+                                        <i class="bi bi-diagram-3 text-primary me-1"></i>
+
+                                        <span
+                                                th:text="${notice.department.name}">
+                                            CSE
+                                        </span>
+
+                                    </span>
+
+
+                                    <!-- Campus -->
+                                    <span
+                                            th:if="${notice.department == null}"
+                                            class="badge rounded-pill bg-primary bg-opacity-10 text-primary px-3 py-2">
+
+                                        <i class="bi bi-globe me-1"></i>
+
+                                        Campus-wide
+
+                                    </span>
+
+                                </td>
+
+
+                                <!-- ACTIONS -->
+                                <td
+                                        class="text-end"
+                                        style="padding-right: 24px;">
+
+                                    <!-- EDIT -->
+
+                                    <button
+                                            type="button"
+                                            class="btn btn-light btn-action text-primary me-1 edit-notice-btn"
+                                            title="Edit"
+
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#editNoticeModal"
+
+                                            th:attr="
+                                            data-id=${notice.id},
+                                            data-title=${notice.title},
+                                            data-content=${notice.content},
+                                            data-department=${notice.department != null ? notice.department.id : ''}
+                                            ">
+
+                                        <i class="bi bi-pencil-square"></i>
+
+                                    </button>
+
+
+                                    <!-- DELETE -->
+
+                                    <form
+                                            th:action="@{/admin/notices/delete/{id}(id=${notice.id})}"
+                                            method="post"
+                                            style="display:inline;">
+
+                                        <button
+                                                type="submit"
+                                                class="btn btn-light btn-action text-danger"
+                                                title="Delete"
+                                                onclick="return confirm('Delete this notice?');">
+
+                                            <i class="bi bi-trash3"></i>
+
+                                        </button>
+
+                                    </form>
+
+                                </td>
+
+                            </tr>
+
+
+                            <!-- ========================= -->
+                            <!-- EMPTY STATE -->
+                            <!-- ========================= -->
+
+                            <tr
+                                    th:if="${#lists.isEmpty(notices)}"
+                                    id="emptyNoticeRow">
+
+                                <td
+                                        colspan="4"
+                                        class="text-center py-5">
+
+                                    <div class="text-muted">
+
+                                        <div class="empty-icon mb-3">
+
+                                            <i class="bi bi-megaphone"></i>
+
+                                        </div>
+
+                                        <h5 class="fw-semibold">
+                                            No announcements yet
+                                        </h5>
+
+                                        <p class="mb-3">
+                                            Publish your first campus notice.
+                                        </p>
+
+                                        <button
+                                                class="btn btn-primary"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#publishNoticeModal">
+
+                                            <i class="bi bi-plus-lg me-1"></i>
+
+                                            Publish Notice
+
+                                        </button>
+
+                                    </div>
+
+                                </td>
+
+                            </tr>
+
+
+                            <!-- SEARCH EMPTY STATE -->
+
+                            <tr
+                                    id="searchEmptyRow"
+                                    style="display:none;">
+
+                                <td
+                                        colspan="4"
+                                        class="text-center py-5">
+
+                                    <div class="text-muted">
+
+                                        <i
+                                                class="bi bi-search fs-1 d-block mb-3 opacity-50">
+                                        </i>
+
+                                        <h5 class="fw-semibold">
+                                            No matching notices
+                                        </h5>
+
+                                        <p class="mb-0">
+                                            Try another search or filter.
+                                        </p>
+
+                                    </div>
+
+                                </td>
+
+                            </tr>
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                </div>
+
+            </div>
+
         </div>
+
     </div>
+
+</div>
+
+
+<!-- ===================================================== -->
+<!-- PUBLISH NOTICE MODAL -->
+<!-- ===================================================== -->
+
+<div
+        class="modal fade"
+        id="publishNoticeModal"
+        tabindex="-1"
+        aria-hidden="true">
+
+    <div class="modal-dialog modal-dialog-centered">
+
+        <div class="modal-content border-0 shadow-lg">
+
+            <div class="modal-header">
+
+                <div>
+
+                    <h5 class="modal-title fw-bold mb-1">
+
+                        <i class="bi bi-megaphone-fill text-primary me-2"></i>
+
+                        Publish New Notice
+
+                    </h5>
+
+                    <small class="text-muted">
+                        Create an announcement for your campus
+                    </small>
+
+                </div>
+
+                <button
+                        type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal">
+                </button>
+
+            </div>
+
+
+            <form
+                    th:action="@{/admin/notices/publish}"
+                    method="post">
+
+                <div class="modal-body">
+
+                    <!-- TITLE -->
+
+                    <div class="mb-3">
+
+                        <label class="form-label fw-semibold">
+                            Notice Title
+                        </label>
+
+                        <input
+                                type="text"
+                                name="title"
+                                class="form-control"
+                                placeholder="e.g. Mid-semester examination schedule"
+                                required>
+
+                    </div>
+
+
+                    <!-- CONTENT -->
+
+                    <div class="mb-3">
+
+                        <label class="form-label fw-semibold">
+                            Notice Content
+                        </label>
+
+                        <textarea
+                                name="content"
+                                class="form-control"
+                                rows="5"
+                                placeholder="Write your announcement here..."
+                                required></textarea>
+
+                    </div>
+
+
+                    <!-- AUDIENCE -->
+
+                    <div class="mb-3">
+
+                        <label class="form-label fw-semibold">
+                            Audience
+                        </label>
+
+                        <select
+                                name="departmentId"
+                                class="form-select">
+
+                            <option value="">
+                                🌐 Campus-wide
+                            </option>
+
+                            <option
+                                    th:each="department : ${departments}"
+                                    th:value="${department.id}"
+                                    th:text="${department.name}">
+
+                                Computer Science
+
+                            </option>
+
+                        </select>
+
+                        <div class="form-text">
+                            Choose Campus-wide or a specific department.
+                        </div>
+
+                    </div>
+
+
+                    <div class="alert alert-primary border-0 small mb-0">
+
+                        <i class="bi bi-info-circle me-1"></i>
+
+                        The notice will be published immediately.
+
+                    </div>
+
+                </div>
+
+
+                <div class="modal-footer">
+
+                    <button
+                            type="button"
+                            class="btn btn-light"
+                            data-bs-dismiss="modal">
+
+                        Cancel
+
+                    </button>
+
+
+                    <button
+                            type="submit"
+                            class="btn btn-primary">
+
+                        <i class="bi bi-send-fill me-1"></i>
+
+                        Publish Notice
+
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- ===================================================== -->
+<!-- EDIT NOTICE MODAL -->
+<!-- ===================================================== -->
+
+<div
+        class="modal fade"
+        id="editNoticeModal"
+        tabindex="-1"
+        aria-hidden="true">
+
+    <div class="modal-dialog modal-dialog-centered">
+
+        <div class="modal-content border-0 shadow-lg">
+
+            <div class="modal-header">
+
+                <div>
+
+                    <h5 class="modal-title fw-bold mb-1">
+
+                        <i class="bi bi-pencil-square text-primary me-2"></i>
+
+                        Edit Notice
+
+                    </h5>
+
+                    <small class="text-muted">
+                        Update the announcement details
+                    </small>
+
+                </div>
+
+                <button
+                        type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal">
+                </button>
+
+            </div>
+
+
+            <form
+                    id="editNoticeForm"
+                    method="post">
+
+                <div class="modal-body">
+
+                    <!-- TITLE -->
+
+                    <div class="mb-3">
+
+                        <label class="form-label fw-semibold">
+                            Notice Title
+                        </label>
+
+                        <input
+                                type="text"
+                                id="editNoticeTitle"
+                                name="title"
+                                class="form-control"
+                                required>
+
+                    </div>
+
+
+                    <!-- CONTENT -->
+
+                    <div class="mb-3">
+
+                        <label class="form-label fw-semibold">
+                            Notice Content
+                        </label>
+
+                        <textarea
+                                id="editNoticeContent"
+                                name="content"
+                                class="form-control"
+                                rows="5"
+                                required></textarea>
+
+                    </div>
+
+
+                    <!-- AUDIENCE -->
+
+                    <div class="mb-3">
+
+                        <label class="form-label fw-semibold">
+                            Audience
+                        </label>
+
+                        <select
+                                id="editNoticeDepartment"
+                                name="departmentId"
+                                class="form-select">
+
+                            <option value="">
+                                🌐 Campus-wide
+                            </option>
+
+                            <option
+                                    th:each="department : ${departments}"
+                                    th:value="${department.id}"
+                                    th:text="${department.name}">
+
+                                Computer Science
+
+                            </option>
+
+                        </select>
+
+                    </div>
+
+                </div>
+
+
+                <div class="modal-footer">
+
+                    <button
+                            type="button"
+                            class="btn btn-light"
+                            data-bs-dismiss="modal">
+
+                        Cancel
+
+                    </button>
+
+
+                    <button
+                            type="submit"
+                            class="btn btn-primary">
+
+                        <i class="bi bi-check-lg me-1"></i>
+
+                        Save Changes
+
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- ===================================================== -->
+<!-- PAGE STYLES -->
+<!-- ===================================================== -->
+
+<style>
+
+    .notice-icon {
+        width: 44px;
+        height: 44px;
+        min-width: 44px;
+        font-size: 18px;
+    }
+
+    .btn-action {
+        width: 38px;
+        height: 38px;
+        padding: 0;
+        border-radius: 9px;
+    }
+
+    .btn-action:hover {
+        transform: translateY(-1px);
+    }
+
+    .notice-row {
+        transition: background-color 0.2s ease;
+    }
+
+    .notice-row:hover {
+        background-color: rgba(13, 110, 253, 0.025);
+    }
+
+    .empty-icon {
+        width: 70px;
+        height: 70px;
+        margin: auto;
+        border-radius: 50%;
+        background: rgba(13, 110, 253, 0.08);
+        color: #0d6efd;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 30px;
+    }
+
+    .modal-content {
+        border-radius: 18px;
+    }
+
+    .modal-header {
+        padding: 20px 24px;
+    }
+
+    .modal-body {
+        padding: 24px;
+    }
+
+    .modal-footer {
+        padding: 16px 24px;
+    }
+
+    .form-control,
+    .form-select {
+        border-radius: 10px;
+        padding: 10px 13px;
+    }
+
+    .form-control:focus,
+    .form-select:focus {
+        box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.1);
+    }
+
+</style>
+
+
+<!-- ===================================================== -->
+<!-- PAGE JAVASCRIPT -->
+<!-- ===================================================== -->
+
+<script>
+
+    document.addEventListener("DOMContentLoaded", function () {
+
+        /* ==========================================
+           SEARCH + FILTER
+           ========================================== */
+
+        const searchInput =
+            document.getElementById("noticeSearch");
+
+        const audienceFilter =
+            document.getElementById("audienceFilter");
+
+        const rows =
+            document.querySelectorAll(".notice-row");
+
+        const searchEmpty =
+            document.getElementById("searchEmptyRow");
+
+
+        function filterNotices() {
+
+            const search =
+                searchInput.value
+                    .toLowerCase()
+                    .trim();
+
+            const audience =
+                audienceFilter.value;
+
+            let visibleCount = 0;
+
+
+            rows.forEach(function (row) {
+
+                const title =
+                    (row.dataset.title || "")
+                        .toLowerCase();
+
+                const content =
+                    (row.dataset.content || "")
+                        .toLowerCase();
+
+                const rowAudience =
+                    row.dataset.audience;
+
+
+                const matchesSearch =
+                    title.includes(search) ||
+                    content.includes(search);
+
+
+                const matchesAudience =
+                    audience === "all" ||
+                    audience === rowAudience;
+
+
+                if (matchesSearch && matchesAudience) {
+
+                    row.style.display = "";
+                    visibleCount++;
+
+                } else {
+
+                    row.style.display = "none";
+
+                }
+
+            });
+
+
+            if (visibleCount === 0 && rows.length > 0) {
+
+                searchEmpty.style.display = "";
+
+            } else {
+
+                searchEmpty.style.display = "none";
+
+            }
+
+        }
+
+
+        searchInput.addEventListener(
+            "input",
+            filterNotices
+        );
+
+
+        audienceFilter.addEventListener(
+            "change",
+            filterNotices
+        );
+
+
+        /* ==========================================
+           EDIT NOTICE
+           ========================================== */
+
+        const editButtons =
+            document.querySelectorAll(".edit-notice-btn");
+
+
+        const editForm =
+            document.getElementById("editNoticeForm");
+
+        const editTitle =
+            document.getElementById("editNoticeTitle");
+
+        const editContent =
+            document.getElementById("editNoticeContent");
+
+        const editDepartment =
+            document.getElementById("editNoticeDepartment");
+
+
+        editButtons.forEach(function (button) {
+
+            button.addEventListener("click", function () {
+
+                const id =
+                    button.dataset.id;
+
+                const title =
+                    button.dataset.title || "";
+
+                const content =
+                    button.dataset.content || "";
+
+                const department =
+                    button.dataset.department || "";
+
+
+                editTitle.value = title;
+
+                editContent.value = content;
+
+                editDepartment.value = department;
+
+
+                editForm.action =
+                    "/admin/notices/edit/" + id;
+
+            });
+
+        });
+
+    });
+
+</script>
+
 </body>
 </html>

@@ -1,34 +1,818 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
+
 <head th:replace="~{admin/fragments :: head('Assignments')}">
 </head>
-<body>
-    <div class="wrapper">
-        <div th:replace="~{admin/fragments :: sidebar('assignments')}"></div>
-        
-        <div class="main-panel">
-            <div th:replace="~{admin/fragments :: navbar('Assignments')}"></div>
 
-            <div class="content-padding">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <div>
-                        <h2 class="page-title">Assignments</h2>
-                        <p class="text-muted mb-0">Overview of course assignments and submissions</p>
-                    </div>
-                    <button class="btn btn-primary shadow-sm"><i class="bi bi-plus-lg me-1"></i> Add New</button>
+<body>
+
+<div class="wrapper">
+
+    <!-- Sidebar -->
+    <div th:replace="~{admin/fragments :: sidebar('assignments')}"></div>
+
+    <div class="main-panel">
+
+        <!-- Navbar -->
+        <div th:replace="~{admin/fragments :: navbar('Assignments')}"></div>
+
+        <div class="content-padding">
+
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="page-title">Assignments</h2>
+                    <p class="text-muted mb-0">
+                        Manage academic assignments and submissions
+                    </p>
                 </div>
-                
-                <div class="card">
-                    <div class="card-body p-0">
-                        <div class="text-center py-5 text-muted">
-                            <i class="bi bi-tools fs-1 d-block mb-3 opacity-50"></i>
-                            <h5 class="fw-semibold">Assignments module under construction</h5>
-                            <p class="mb-0">This feature is currently being integrated.</p>
+
+                <button class="btn btn-primary shadow-sm"
+                        onclick="openAssignmentModal()">
+                    <i class="bi bi-plus-lg me-1"></i>
+                    Create Assignment
+                </button>
+            </div>
+
+
+            <!-- Statistics -->
+            <div class="row g-3 mb-4">
+
+                <div class="col-md-3">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <small class="text-muted">Total</small>
+                                    <h3 class="fw-bold mb-0">24</h3>
+                                </div>
+
+                                <div class="rounded-circle bg-primary bg-opacity-10
+                                            text-primary d-flex align-items-center
+                                            justify-content-center"
+                                     style="width:45px;height:45px;">
+                                    <i class="bi bi-journal-text fs-5"></i>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
+
+
+                <div class="col-md-3">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <small class="text-muted">Active</small>
+                                    <h3 class="fw-bold mb-0">8</h3>
+                                </div>
+
+                                <div class="rounded-circle bg-success bg-opacity-10
+                                            text-success d-flex align-items-center
+                                            justify-content-center"
+                                     style="width:45px;height:45px;">
+                                    <i class="bi bi-play-circle fs-5"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+                <div class="col-md-3">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <small class="text-muted">Pending Review</small>
+                                    <h3 class="fw-bold mb-0">37</h3>
+                                </div>
+
+                                <div class="rounded-circle bg-warning bg-opacity-10
+                                            text-warning d-flex align-items-center
+                                            justify-content-center"
+                                     style="width:45px;height:45px;">
+                                    <i class="bi bi-hourglass-split fs-5"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+                <div class="col-md-3">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <small class="text-muted">Completed</small>
+                                    <h3 class="fw-bold mb-0">16</h3>
+                                </div>
+
+                                <div class="rounded-circle bg-info bg-opacity-10
+                                            text-info d-flex align-items-center
+                                            justify-content-center"
+                                     style="width:45px;height:45px;">
+                                    <i class="bi bi-check2-circle fs-5"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
             </div>
+
+
+            <!-- Filters -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body">
+
+                    <div class="row g-3">
+
+                        <div class="col-md-5">
+                            <div class="input-group">
+                                <span class="input-group-text bg-white">
+                                    <i class="bi bi-search"></i>
+                                </span>
+
+                                <input type="text"
+                                       id="assignmentSearch"
+                                       class="form-control"
+                                       placeholder="Search assignments..."
+                                       onkeyup="filterAssignments()">
+                            </div>
+                        </div>
+
+                        <div class="col-md-3">
+                            <select id="subjectFilter"
+                                    class="form-select"
+                                    onchange="filterAssignments()">
+                                <option value="">All Subjects</option>
+                                <option value="DSA">Data Structures & Algorithms</option>
+                                <option value="DBMS">Database Management Systems</option>
+                                <option value="COA">Computer Organization</option>
+                                <option value="JAVA">Java Programming</option>
+                                <option value="MATHS">Engineering Mathematics</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-2">
+                            <select id="statusFilter"
+                                    class="form-select"
+                                    onchange="filterAssignments()">
+                                <option value="">All Status</option>
+                                <option value="ACTIVE">Active</option>
+                                <option value="COMPLETED">Completed</option>
+                                <option value="CLOSED">Closed</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-2">
+                            <button class="btn btn-light border w-100"
+                                    onclick="resetFilters()">
+                                <i class="bi bi-arrow-counterclockwise me-1"></i>
+                                Reset
+                            </button>
+                        </div>
+
+                    </div>
+
+                </div>
+            </div>
+
+
+            <!-- Assignment Table -->
+            <div class="card border-0 shadow-sm">
+
+                <div class="card-body p-0">
+
+                    <div class="table-responsive">
+
+                        <table class="table table-hover align-middle mb-0">
+
+                            <thead class="table-light">
+                            <tr>
+                                <th style="padding-left:24px;">Assignment</th>
+                                <th>Subject</th>
+                                <th>Due Date</th>
+                                <th>Submissions</th>
+                                <th>Status</th>
+                                <th class="text-end"
+                                    style="padding-right:24px;">
+                                    Actions
+                                </th>
+                            </tr>
+                            </thead>
+
+
+                            <tbody id="assignmentTable">
+
+                            <tr data-subject="DSA"
+                                data-status="ACTIVE">
+
+                                <td style="padding-left:24px;">
+
+                                    <div class="d-flex align-items-center">
+
+                                        <div class="rounded-3 bg-primary bg-opacity-10
+                                                    text-primary d-flex
+                                                    align-items-center
+                                                    justify-content-center me-3"
+                                             style="width:42px;height:42px;">
+                                            <i class="bi bi-code-slash fs-5"></i>
+                                        </div>
+
+                                        <div>
+                                            <div class="fw-semibold">
+                                                Sorting Algorithms
+                                            </div>
+
+                                            <small class="text-muted">
+                                                Assignment #01
+                                            </small>
+                                        </div>
+
+                                    </div>
+
+                                </td>
+
+                                <td>
+                                    <span class="badge bg-light text-dark border">
+                                        DSA
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <span class="fw-medium">
+                                        Oct 12, 2026
+                                    </span>
+                                    <br>
+                                    <small class="text-muted">
+                                        11:59 PM
+                                    </small>
+                                </td>
+
+                                <td>
+                                    <span class="fw-semibold">42</span>
+                                    <span class="text-muted">/ 60</span>
+                                </td>
+
+                                <td>
+                                    <span class="badge bg-success-subtle text-success">
+                                        Active
+                                    </span>
+                                </td>
+
+                                <td class="text-end"
+                                    style="padding-right:24px;">
+
+                                    <button class="btn btn-sm btn-light text-primary"
+                                            title="View">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+
+                                    <button class="btn btn-sm btn-light text-warning"
+                                            title="Edit">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+
+                                    <button class="btn btn-sm btn-light text-danger"
+                                            title="Delete">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+
+                                </td>
+
+                            </tr>
+
+
+                            <tr data-subject="DBMS"
+                                data-status="ACTIVE">
+
+                                <td style="padding-left:24px;">
+
+                                    <div class="d-flex align-items-center">
+
+                                        <div class="rounded-3 bg-info bg-opacity-10
+                                                    text-info d-flex
+                                                    align-items-center
+                                                    justify-content-center me-3"
+                                             style="width:42px;height:42px;">
+                                            <i class="bi bi-database fs-5"></i>
+                                        </div>
+
+                                        <div>
+                                            <div class="fw-semibold">
+                                                SQL Queries & Joins
+                                            </div>
+
+                                            <small class="text-muted">
+                                                Assignment #03
+                                            </small>
+                                        </div>
+
+                                    </div>
+
+                                </td>
+
+                                <td>
+                                    <span class="badge bg-light text-dark border">
+                                        DBMS
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <span class="fw-medium">
+                                        Oct 15, 2026
+                                    </span>
+                                    <br>
+                                    <small class="text-muted">
+                                        11:59 PM
+                                    </small>
+                                </td>
+
+                                <td>
+                                    <span class="fw-semibold">35</span>
+                                    <span class="text-muted">/ 60</span>
+                                </td>
+
+                                <td>
+                                    <span class="badge bg-success-subtle text-success">
+                                        Active
+                                    </span>
+                                </td>
+
+                                <td class="text-end"
+                                    style="padding-right:24px;">
+
+                                    <button class="btn btn-sm btn-light text-primary">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+
+                                    <button class="btn btn-sm btn-light text-warning">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+
+                                    <button class="btn btn-sm btn-light text-danger">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+
+                                </td>
+
+                            </tr>
+
+
+                            <tr data-subject="COA"
+                                data-status="COMPLETED">
+
+                                <td style="padding-left:24px;">
+
+                                    <div class="d-flex align-items-center">
+
+                                        <div class="rounded-3 bg-warning bg-opacity-10
+                                                    text-warning d-flex
+                                                    align-items-center
+                                                    justify-content-center me-3"
+                                             style="width:42px;height:42px;">
+                                            <i class="bi bi-cpu fs-5"></i>
+                                        </div>
+
+                                        <div>
+                                            <div class="fw-semibold">
+                                                CPU Architecture
+                                            </div>
+
+                                            <small class="text-muted">
+                                                Assignment #02
+                                            </small>
+                                        </div>
+
+                                    </div>
+
+                                </td>
+
+                                <td>
+                                    <span class="badge bg-light text-dark border">
+                                        COA
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <span class="fw-medium">
+                                        Oct 05, 2026
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <span class="fw-semibold">58</span>
+                                    <span class="text-muted">/ 60</span>
+                                </td>
+
+                                <td>
+                                    <span class="badge bg-primary-subtle text-primary">
+                                        Completed
+                                    </span>
+                                </td>
+
+                                <td class="text-end"
+                                    style="padding-right:24px;">
+
+                                    <button class="btn btn-sm btn-light text-primary">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+
+                                    <button class="btn btn-sm btn-light text-warning">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+
+                                    <button class="btn btn-sm btn-light text-danger">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+
+                                </td>
+
+                            </tr>
+
+
+                            <tr data-subject="JAVA"
+                                data-status="ACTIVE">
+
+                                <td style="padding-left:24px;">
+
+                                    <div class="d-flex align-items-center">
+
+                                        <div class="rounded-3 bg-danger bg-opacity-10
+                                                    text-danger d-flex
+                                                    align-items-center
+                                                    justify-content-center me-3"
+                                             style="width:42px;height:42px;">
+                                            <i class="bi bi-cup-hot fs-5"></i>
+                                        </div>
+
+                                        <div>
+                                            <div class="fw-semibold">
+                                                Java OOP Concepts
+                                            </div>
+
+                                            <small class="text-muted">
+                                                Assignment #04
+                                            </small>
+                                        </div>
+
+                                    </div>
+
+                                </td>
+
+                                <td>
+                                    <span class="badge bg-light text-dark border">
+                                        JAVA
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <span class="fw-medium">
+                                        Oct 18, 2026
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <span class="fw-semibold">28</span>
+                                    <span class="text-muted">/ 60</span>
+                                </td>
+
+                                <td>
+                                    <span class="badge bg-success-subtle text-success">
+                                        Active
+                                    </span>
+                                </td>
+
+                                <td class="text-end"
+                                    style="padding-right:24px;">
+
+                                    <button class="btn btn-sm btn-light text-primary">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+
+                                    <button class="btn btn-sm btn-light text-warning">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+
+                                    <button class="btn btn-sm btn-light text-danger">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+
+                                </td>
+
+                            </tr>
+
+
+                            <tr data-subject="MATHS"
+                                data-status="CLOSED">
+
+                                <td style="padding-left:24px;">
+
+                                    <div class="d-flex align-items-center">
+
+                                        <div class="rounded-3 bg-secondary bg-opacity-10
+                                                    text-secondary d-flex
+                                                    align-items-center
+                                                    justify-content-center me-3"
+                                             style="width:42px;height:42px;">
+                                            <i class="bi bi-calculator fs-5"></i>
+                                        </div>
+
+                                        <div>
+                                            <div class="fw-semibold">
+                                                Differential Equations
+                                            </div>
+
+                                            <small class="text-muted">
+                                                Assignment #01
+                                            </small>
+                                        </div>
+
+                                    </div>
+
+                                </td>
+
+                                <td>
+                                    <span class="badge bg-light text-dark border">
+                                        MATHS
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <span class="fw-medium">
+                                        Sep 28, 2026
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <span class="fw-semibold">60</span>
+                                    <span class="text-muted">/ 60</span>
+                                </td>
+
+                                <td>
+                                    <span class="badge bg-secondary-subtle text-secondary">
+                                        Closed
+                                    </span>
+                                </td>
+
+                                <td class="text-end"
+                                    style="padding-right:24px;">
+
+                                    <button class="btn btn-sm btn-light text-primary">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+
+                                    <button class="btn btn-sm btn-light text-warning">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+
+                                    <button class="btn btn-sm btn-light text-danger">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+
+                                </td>
+
+                            </tr>
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                </div>
+
+            </div>
+
         </div>
+
     </div>
+
+</div>
+
+
+<!-- Create Assignment Modal -->
+
+<div class="modal fade"
+     id="assignmentModal"
+     tabindex="-1">
+
+    <div class="modal-dialog modal-dialog-centered">
+
+        <div class="modal-content border-0 shadow">
+
+            <div class="modal-header">
+
+                <div>
+                    <h5 class="modal-title fw-bold">
+                        <i class="bi bi-journal-plus text-primary me-2"></i>
+                        Create Assignment
+                    </h5>
+
+                    <small class="text-muted">
+                        Add a new academic assignment
+                    </small>
+                </div>
+
+                <button type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal">
+                </button>
+
+            </div>
+
+
+            <div class="modal-body">
+
+                <div class="mb-3">
+
+                    <label class="form-label fw-semibold">
+                        Assignment Title
+                    </label>
+
+                    <input type="text"
+                           class="form-control"
+                           placeholder="Enter assignment title">
+
+                </div>
+
+
+                <div class="mb-3">
+
+                    <label class="form-label fw-semibold">
+                        Subject
+                    </label>
+
+                    <select class="form-select">
+
+                        <option selected disabled>
+                            Select subject
+                        </option>
+
+                        <option>Data Structures & Algorithms</option>
+                        <option>Database Management Systems</option>
+                        <option>Computer Organization</option>
+                        <option>Java Programming</option>
+                        <option>Engineering Mathematics</option>
+
+                    </select>
+
+                </div>
+
+
+                <div class="row g-3">
+
+                    <div class="col-md-6">
+
+                        <label class="form-label fw-semibold">
+                            Due Date
+                        </label>
+
+                        <input type="date"
+                               class="form-control">
+
+                    </div>
+
+                    <div class="col-md-6">
+
+                        <label class="form-label fw-semibold">
+                            Max Marks
+                        </label>
+
+                        <input type="number"
+                               class="form-control"
+                               placeholder="100">
+
+                    </div>
+
+                </div>
+
+
+                <div class="mt-3">
+
+                    <label class="form-label fw-semibold">
+                        Description
+                    </label>
+
+                    <textarea class="form-control"
+                              rows="4"
+                              placeholder="Assignment instructions..."></textarea>
+
+                </div>
+
+            </div>
+
+
+            <div class="modal-footer">
+
+                <button class="btn btn-light"
+                        data-bs-dismiss="modal">
+                    Cancel
+                </button>
+
+                <button class="btn btn-primary"
+                        onclick="createAssignment()">
+                    <i class="bi bi-check-lg me-1"></i>
+                    Create Assignment
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<script>
+
+function filterAssignments() {
+
+    const search =
+        document.getElementById("assignmentSearch")
+        .value
+        .toLowerCase();
+
+    const subject =
+        document.getElementById("subjectFilter")
+        .value;
+
+    const status =
+        document.getElementById("statusFilter")
+        .value;
+
+    const rows =
+        document.querySelectorAll("#assignmentTable tr");
+
+    rows.forEach(row => {
+
+        const text =
+            row.innerText.toLowerCase();
+
+        const rowSubject =
+            row.dataset.subject;
+
+        const rowStatus =
+            row.dataset.status;
+
+        const matchesSearch =
+            text.includes(search);
+
+        const matchesSubject =
+            !subject || rowSubject === subject;
+
+        const matchesStatus =
+            !status || rowStatus === status;
+
+        row.style.display =
+            matchesSearch &&
+            matchesSubject &&
+            matchesStatus
+                ? ""
+                : "none";
+
+    });
+
+}
+
+
+function resetFilters() {
+
+    document.getElementById("assignmentSearch").value = "";
+    document.getElementById("subjectFilter").value = "";
+    document.getElementById("statusFilter").value = "";
+
+    filterAssignments();
+
+}
+
+
+function openAssignmentModal() {
+
+    const modal =
+        new bootstrap.Modal(
+            document.getElementById("assignmentModal")
+        );
+
+    modal.show();
+
+}
+
+
+function createAssignment() {
+
+    alert(
+        "Assignment form is ready. Backend saving will be connected next."
+    );
+
+}
+
+</script>
+
 </body>
 </html>

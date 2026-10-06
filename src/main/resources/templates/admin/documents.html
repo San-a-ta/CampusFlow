@@ -1,34 +1,1017 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{admin/fragments :: head('Documents')}">
-</head>
-<body>
-    <div class="wrapper">
-        <div th:replace="~{admin/fragments :: sidebar('documents')}"></div>
-        
-        <div class="main-panel">
-            <div th:replace="~{admin/fragments :: navbar('Documents')}"></div>
 
-            <div class="content-padding">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <div>
-                        <h2 class="page-title">Documents</h2>
-                        <p class="text-muted mb-0">Manage study materials and institutional documents</p>
-                    </div>
-                    <button class="btn btn-primary shadow-sm"><i class="bi bi-plus-lg me-1"></i> Add New</button>
+<head th:replace="~{admin/fragments :: head('Study Materials')}">
+</head>
+
+<body>
+
+<div class="wrapper">
+
+    <div th:replace="~{admin/fragments :: sidebar('documents')}"></div>
+
+    <div class="main-panel">
+
+        <div th:replace="~{admin/fragments :: navbar('Study Materials & Library')}"></div>
+
+        <div class="content-padding">
+
+            <!-- HEADER -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+
+                <div>
+                    <h2 class="page-title mb-1">Study Materials</h2>
+                    <p class="text-muted mb-0">
+                        Access notes, books, question papers and academic resources
+                    </p>
                 </div>
-                
-                <div class="card">
-                    <div class="card-body p-0">
-                        <div class="text-center py-5 text-muted">
-                            <i class="bi bi-tools fs-1 d-block mb-3 opacity-50"></i>
-                            <h5 class="fw-semibold">Documents module under construction</h5>
-                            <p class="mb-0">This feature is currently being integrated.</p>
-                        </div>
-                    </div>
-                </div>
+
+                <button class="btn btn-primary shadow-sm"
+                        onclick="openUploadModal()">
+                    <i class="bi bi-cloud-upload me-1"></i>
+                    Add Resource
+                </button>
+
             </div>
+
+
+            <!-- SEARCH -->
+            <div class="card border-0 shadow-sm mb-4">
+
+                <div class="card-body">
+
+                    <div class="row g-3">
+
+                        <div class="col-lg-7">
+
+                            <div class="input-group">
+
+                                <span class="input-group-text bg-white">
+                                    <i class="bi bi-search"></i>
+                                </span>
+
+                                <input
+                                        type="text"
+                                        id="resourceSearch"
+                                        class="form-control"
+                                        placeholder="Search notes, books, question papers..."
+                                        onkeyup="filterResources()">
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="col-lg-3">
+
+                            <select
+                                    id="categoryFilter"
+                                    class="form-select"
+                                    onchange="filterResources()">
+
+                                <option value="">All Categories</option>
+                                <option value="NOTES">Notes</option>
+                                <option value="BOOKS">Books</option>
+                                <option value="PYQ">Previous Year Papers</option>
+                                <option value="LAB">Lab Manuals</option>
+                                <option value="OTHER">Other</option>
+
+                            </select>
+
+                        </div>
+
+
+                        <div class="col-lg-2">
+
+                            <button
+                                    class="btn btn-light border w-100"
+                                    onclick="resetFilters()">
+
+                                <i class="bi bi-arrow-counterclockwise me-1"></i>
+                                Reset
+
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- RESOURCE CATEGORIES -->
+
+            <div class="row g-4 mb-4">
+
+                <div class="col-md-6 col-xl-3">
+
+                    <div class="category-card"
+                         onclick="selectCategory('NOTES')">
+
+                        <div class="category-icon notes">
+                            <i class="bi bi-journal-text"></i>
+                        </div>
+
+                        <div>
+                            <h5>Notes</h5>
+                            <p>Lecture notes & summaries</p>
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div class="col-md-6 col-xl-3">
+
+                    <div class="category-card"
+                         onclick="selectCategory('BOOKS')">
+
+                        <div class="category-icon books">
+                            <i class="bi bi-book"></i>
+                        </div>
+
+                        <div>
+                            <h5>Books</h5>
+                            <p>Reference books & ebooks</p>
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div class="col-md-6 col-xl-3">
+
+                    <div class="category-card"
+                         onclick="selectCategory('PYQ')">
+
+                        <div class="category-icon pyq">
+                            <i class="bi bi-file-earmark-text"></i>
+                        </div>
+
+                        <div>
+                            <h5>Previous Papers</h5>
+                            <p>University question papers</p>
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div class="col-md-6 col-xl-3">
+
+                    <div class="category-card"
+                         onclick="selectCategory('LAB')">
+
+                        <div class="category-icon lab">
+                            <i class="bi bi-pc-display"></i>
+                        </div>
+
+                        <div>
+                            <h5>Lab Manuals</h5>
+                            <p>Practical resources</p>
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- RESOURCES -->
+
+            <div class="card border-0 shadow-sm">
+
+                <div class="card-header bg-white border-0 pt-4 px-4">
+
+                    <div class="d-flex justify-content-between align-items-center">
+
+                        <div>
+
+                            <h5 class="fw-bold mb-1">
+                                Available Resources
+                            </h5>
+
+                            <small class="text-muted">
+                                Academic resources for students
+                            </small>
+
+                        </div>
+
+                        <span class="badge bg-primary-subtle text-primary">
+                            6 Resources
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <div class="card-body p-0">
+
+                    <div class="table-responsive">
+
+                        <table class="table table-hover align-middle mb-0">
+
+                            <thead class="table-light">
+
+                            <tr>
+
+                                <th style="padding-left:24px;">
+                                    Resource
+                                </th>
+
+                                <th>
+                                    Subject
+                                </th>
+
+                                <th>
+                                    Category
+                                </th>
+
+                                <th>
+                                    Added
+                                </th>
+
+                                <th class="text-end"
+                                    style="padding-right:24px;">
+                                    Action
+                                </th>
+
+                            </tr>
+
+                            </thead>
+
+
+                            <tbody id="resourceTable">
+
+
+                            <!-- RESOURCE 1 -->
+
+                            <tr data-category="NOTES">
+
+                                <td style="padding-left:24px;">
+
+                                    <div class="d-flex align-items-center">
+
+                                        <div class="resource-icon pdf">
+                                            <i class="bi bi-file-earmark-pdf"></i>
+                                        </div>
+
+                                        <div>
+
+                                            <div class="fw-semibold">
+                                                Data Structures Complete Notes
+                                            </div>
+
+                                            <small class="text-muted">
+                                                PDF • 4.2 MB
+                                            </small>
+
+                                        </div>
+
+                                    </div>
+
+                                </td>
+
+                                <td>
+                                    Data Structures
+                                </td>
+
+                                <td>
+                                    <span class="badge bg-primary-subtle text-primary">
+                                        Notes
+                                    </span>
+                                </td>
+
+                                <td>
+                                    Oct 05, 2026
+                                </td>
+
+                                <td class="text-end"
+                                    style="padding-right:24px;">
+
+                                    <button
+                                            class="btn btn-sm btn-light text-primary"
+                                            onclick="viewResource('Data Structures Complete Notes')">
+
+                                        <i class="bi bi-eye"></i>
+
+                                    </button>
+
+                                    <button
+                                            class="btn btn-sm btn-light text-success"
+                                            onclick="downloadResource()">
+
+                                        <i class="bi bi-download"></i>
+
+                                    </button>
+
+                                </td>
+
+                            </tr>
+
+
+                            <!-- RESOURCE 2 -->
+
+                            <tr data-category="NOTES">
+
+                                <td style="padding-left:24px;">
+
+                                    <div class="d-flex align-items-center">
+
+                                        <div class="resource-icon pdf">
+                                            <i class="bi bi-file-earmark-pdf"></i>
+                                        </div>
+
+                                        <div>
+
+                                            <div class="fw-semibold">
+                                                DBMS Module 1 Notes
+                                            </div>
+
+                                            <small class="text-muted">
+                                                PDF • 2.8 MB
+                                            </small>
+
+                                        </div>
+
+                                    </div>
+
+                                </td>
+
+                                <td>
+                                    DBMS
+                                </td>
+
+                                <td>
+                                    <span class="badge bg-primary-subtle text-primary">
+                                        Notes
+                                    </span>
+                                </td>
+
+                                <td>
+                                    Oct 03, 2026
+                                </td>
+
+                                <td class="text-end"
+                                    style="padding-right:24px;">
+
+                                    <button class="btn btn-sm btn-light text-primary">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+
+                                    <button class="btn btn-sm btn-light text-success">
+                                        <i class="bi bi-download"></i>
+                                    </button>
+
+                                </td>
+
+                            </tr>
+
+
+                            <!-- RESOURCE 3 -->
+
+                            <tr data-category="BOOKS">
+
+                                <td style="padding-left:24px;">
+
+                                    <div class="d-flex align-items-center">
+
+                                        <div class="resource-icon book">
+                                            <i class="bi bi-book"></i>
+                                        </div>
+
+                                        <div>
+
+                                            <div class="fw-semibold">
+                                                Java Programming Reference
+                                            </div>
+
+                                            <small class="text-muted">
+                                                EPUB • Reference
+                                            </small>
+
+                                        </div>
+
+                                    </div>
+
+                                </td>
+
+                                <td>
+                                    Java
+                                </td>
+
+                                <td>
+                                    <span class="badge bg-success-subtle text-success">
+                                        Book
+                                    </span>
+                                </td>
+
+                                <td>
+                                    Sep 28, 2026
+                                </td>
+
+                                <td class="text-end"
+                                    style="padding-right:24px;">
+
+                                    <button class="btn btn-sm btn-light text-primary">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+
+                                    <button class="btn btn-sm btn-light text-success">
+                                        <i class="bi bi-download"></i>
+                                    </button>
+
+                                </td>
+
+                            </tr>
+
+
+                            <!-- RESOURCE 4 -->
+
+                            <tr data-category="PYQ">
+
+                                <td style="padding-left:24px;">
+
+                                    <div class="d-flex align-items-center">
+
+                                        <div class="resource-icon paper">
+                                            <i class="bi bi-file-earmark-text"></i>
+                                        </div>
+
+                                        <div>
+
+                                            <div class="fw-semibold">
+                                                MU Sem 3 Previous Year Paper
+                                            </div>
+
+                                            <small class="text-muted">
+                                                PDF • 2025
+                                            </small>
+
+                                        </div>
+
+                                    </div>
+
+                                </td>
+
+                                <td>
+                                    All Subjects
+                                </td>
+
+                                <td>
+                                    <span class="badge bg-warning-subtle text-warning">
+                                        PYQ
+                                    </span>
+                                </td>
+
+                                <td>
+                                    Sep 20, 2026
+                                </td>
+
+                                <td class="text-end"
+                                    style="padding-right:24px;">
+
+                                    <button class="btn btn-sm btn-light text-primary">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+
+                                    <button class="btn btn-sm btn-light text-success">
+                                        <i class="bi bi-download"></i>
+                                    </button>
+
+                                </td>
+
+                            </tr>
+
+
+                            <!-- RESOURCE 5 -->
+
+                            <tr data-category="LAB">
+
+                                <td style="padding-left:24px;">
+
+                                    <div class="d-flex align-items-center">
+
+                                        <div class="resource-icon lab-file">
+                                            <i class="bi bi-pc-display"></i>
+                                        </div>
+
+                                        <div>
+
+                                            <div class="fw-semibold">
+                                                Java Programming Lab Manual
+                                            </div>
+
+                                            <small class="text-muted">
+                                                PDF • 3.1 MB
+                                            </small>
+
+                                        </div>
+
+                                    </div>
+
+                                </td>
+
+                                <td>
+                                    Java
+                                </td>
+
+                                <td>
+                                    <span class="badge bg-info-subtle text-info">
+                                        Lab
+                                    </span>
+                                </td>
+
+                                <td>
+                                    Sep 15, 2026
+                                </td>
+
+                                <td class="text-end"
+                                    style="padding-right:24px;">
+
+                                    <button class="btn btn-sm btn-light text-primary">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+
+                                    <button class="btn btn-sm btn-light text-success">
+                                        <i class="bi bi-download"></i>
+                                    </button>
+
+                                </td>
+
+                            </tr>
+
+
+                            <!-- RESOURCE 6 -->
+
+                            <tr data-category="PYQ">
+
+                                <td style="padding-left:24px;">
+
+                                    <div class="d-flex align-items-center">
+
+                                        <div class="resource-icon paper">
+                                            <i class="bi bi-file-earmark-text"></i>
+                                        </div>
+
+                                        <div>
+
+                                            <div class="fw-semibold">
+                                                COA University Question Bank
+                                            </div>
+
+                                            <small class="text-muted">
+                                                PDF • 1.9 MB
+                                            </small>
+
+                                        </div>
+
+                                    </div>
+
+                                </td>
+
+                                <td>
+                                    COA
+                                </td>
+
+                                <td>
+                                    <span class="badge bg-warning-subtle text-warning">
+                                        PYQ
+                                    </span>
+                                </td>
+
+                                <td>
+                                    Sep 10, 2026
+                                </td>
+
+                                <td class="text-end"
+                                    style="padding-right:24px;">
+
+                                    <button class="btn btn-sm btn-light text-primary">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+
+                                    <button class="btn btn-sm btn-light text-success">
+                                        <i class="bi bi-download"></i>
+                                    </button>
+
+                                </td>
+
+                            </tr>
+
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                </div>
+
+            </div>
+
         </div>
+
     </div>
+
+</div>
+
+
+<!-- ADD RESOURCE MODAL -->
+
+<div class="modal fade"
+     id="uploadModal"
+     tabindex="-1">
+
+    <div class="modal-dialog modal-dialog-centered">
+
+        <div class="modal-content border-0 shadow">
+
+            <div class="modal-header">
+
+                <div>
+
+                    <h5 class="modal-title fw-bold">
+                        <i class="bi bi-cloud-upload text-primary me-2"></i>
+                        Add Study Resource
+                    </h5>
+
+                    <small class="text-muted">
+                        Add a new academic resource
+                    </small>
+
+                </div>
+
+                <button type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal">
+                </button>
+
+            </div>
+
+
+            <div class="modal-body">
+
+                <div class="mb-3">
+
+                    <label class="form-label fw-semibold">
+                        Resource Name
+                    </label>
+
+                    <input
+                            type="text"
+                            class="form-control"
+                            placeholder="Enter resource name">
+
+                </div>
+
+
+                <div class="mb-3">
+
+                    <label class="form-label fw-semibold">
+                        Subject
+                    </label>
+
+                    <select class="form-select">
+
+                        <option selected disabled>
+                            Select subject
+                        </option>
+
+                        <option>Data Structures</option>
+                        <option>DBMS</option>
+                        <option>Computer Organization</option>
+                        <option>Java Programming</option>
+                        <option>Engineering Mathematics</option>
+
+                    </select>
+
+                </div>
+
+
+                <div class="mb-3">
+
+                    <label class="form-label fw-semibold">
+                        Category
+                    </label>
+
+                    <select class="form-select">
+
+                        <option>Notes</option>
+                        <option>Books</option>
+                        <option>Previous Year Papers</option>
+                        <option>Lab Manuals</option>
+                        <option>Other</option>
+
+                    </select>
+
+                </div>
+
+
+                <div>
+
+                    <label class="form-label fw-semibold">
+                        File
+                    </label>
+
+                    <input
+                            type="file"
+                            class="form-control">
+
+                </div>
+
+            </div>
+
+
+            <div class="modal-footer">
+
+                <button
+                        class="btn btn-light"
+                        data-bs-dismiss="modal">
+
+                    Cancel
+
+                </button>
+
+                <button
+                        class="btn btn-primary"
+                        onclick="uploadResource()">
+
+                    <i class="bi bi-upload me-1"></i>
+                    Add Resource
+
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<style>
+
+.category-card {
+
+    height: 100%;
+
+    padding: 20px;
+
+    background: #fff;
+
+    border: 1px solid #edf0f4;
+
+    border-radius: 14px;
+
+    display: flex;
+
+    align-items: center;
+
+    cursor: pointer;
+
+    transition: 0.2s ease;
+
+    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+
+}
+
+.category-card:hover {
+
+    transform: translateY(-3px);
+
+    box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+
+}
+
+.category-card h5 {
+
+    margin: 0 0 4px;
+
+    font-weight: 700;
+
+}
+
+.category-card p {
+
+    margin: 0;
+
+    color: #6c757d;
+
+    font-size: 13px;
+
+}
+
+
+.category-icon {
+
+    width: 48px;
+
+    height: 48px;
+
+    border-radius: 12px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    font-size: 22px;
+
+    margin-right: 14px;
+
+}
+
+.notes {
+
+    background: rgba(13,110,253,.1);
+    color: #0d6efd;
+
+}
+
+.books {
+
+    background: rgba(25,135,84,.1);
+    color: #198754;
+
+}
+
+.pyq {
+
+    background: rgba(255,193,7,.15);
+    color: #b88600;
+
+}
+
+.lab {
+
+    background: rgba(13,202,240,.12);
+    color: #087990;
+
+}
+
+
+.resource-icon {
+
+    width: 42px;
+
+    height: 42px;
+
+    border-radius: 10px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    margin-right: 14px;
+
+    font-size: 19px;
+
+}
+
+.resource-icon.pdf {
+
+    background: rgba(220,53,69,.1);
+    color: #dc3545;
+
+}
+
+.resource-icon.book {
+
+    background: rgba(25,135,84,.1);
+    color: #198754;
+
+}
+
+.resource-icon.paper {
+
+    background: rgba(255,193,7,.15);
+    color: #b88600;
+
+}
+
+.resource-icon.lab-file {
+
+    background: rgba(13,202,240,.12);
+    color: #087990;
+
+}
+
+</style>
+
+
+<script>
+
+function filterResources() {
+
+    const search =
+        document.getElementById("resourceSearch")
+            .value
+            .toLowerCase();
+
+    const category =
+        document.getElementById("categoryFilter")
+            .value;
+
+    const rows =
+        document.querySelectorAll("#resourceTable tr");
+
+    rows.forEach(row => {
+
+        const text =
+            row.innerText.toLowerCase();
+
+        const rowCategory =
+            row.dataset.category;
+
+        const matchesSearch =
+            text.includes(search);
+
+        const matchesCategory =
+            !category ||
+            rowCategory === category;
+
+        row.style.display =
+            matchesSearch && matchesCategory
+                ? ""
+                : "none";
+
+    });
+
+}
+
+
+function selectCategory(category) {
+
+    document.getElementById("categoryFilter").value =
+        category;
+
+    filterResources();
+
+}
+
+
+function resetFilters() {
+
+    document.getElementById("resourceSearch").value = "";
+
+    document.getElementById("categoryFilter").value = "";
+
+    filterResources();
+
+}
+
+
+function openUploadModal() {
+
+    const modal =
+        new bootstrap.Modal(
+            document.getElementById("uploadModal")
+        );
+
+    modal.show();
+
+}
+
+
+function uploadResource() {
+
+    alert(
+        "Resource upload is ready. Database/file storage will be connected next."
+    );
+
+}
+
+
+function viewResource(name) {
+
+    alert(
+        "Opening: " + name
+    );
+
+}
+
+
+function downloadResource() {
+
+    alert(
+        "Download will be connected to the uploaded resource next."
+    );
+
+}
+
+</script>
+
 </body>
 </html>
