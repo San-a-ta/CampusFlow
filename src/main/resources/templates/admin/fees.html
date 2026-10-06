@@ -1,1043 +1,298 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
-
-<head th:replace="~{admin/fragments :: head('Fees & Finance')}">
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/fragments :: head('Fees')}">
 </head>
-
 <body>
+    <div class="wrapper">
+        <div th:replace="~{admin/fragments :: sidebar('fees')}"></div>
 
-<div class="wrapper">
+        <div class="main-panel">
+            <div th:replace="~{admin/fragments :: navbar('Fees')}"></div>
 
-    <!-- SIDEBAR -->
-    <div th:replace="~{admin/fragments :: sidebar('fees')}"></div>
-
-    <!-- MAIN -->
-    <div class="main-panel">
-
-        <div th:replace="~{admin/fragments :: navbar('Fees & Finance')}"></div>
-
-        <div class="content-padding">
-
-            <!-- HEADER -->
-            <div class="page-header">
-                <div>
-                    <h2 class="page-title">Fees & Finance</h2>
-                    <p class="page-subtitle">
-                        Manage student fees, payments and outstanding balances
-                    </p>
-                </div>
-
-                <button class="primary-btn" onclick="openPaymentModal()">
-                    <i class="bi bi-plus-lg"></i>
-                    Record Payment
-                </button>
-            </div>
-
-
-            <!-- STATS -->
-            <div class="stats-grid">
-
-                <div class="stat-card">
-                    <div class="stat-icon blue">
-                        <i class="bi bi-wallet2"></i>
-                    </div>
+            <div class="content-padding">
+                <div class="d-flex justify-content-between align-items-center mb-4">
                     <div>
-                        <span>Total Fees</span>
-                        <h3>₹12,45,000</h3>
-                        <small>For current academic year</small>
+                        <h2 class="page-title">Fees</h2>
+                        <p class="text-muted mb-0">Manage student fee records and payments</p>
+                    </div>
+                    <button class="btn btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#feeModal">
+                        <i class="bi bi-plus-lg me-1"></i> Add Fee Record
+                    </button>
+                </div>
+
+                <div th:if="${success}" class="alert alert-success alert-dismissible fade show rounded-3 border-0 shadow-sm" role="alert">
+                    <i class="bi bi-check-circle-fill me-2"></i>
+                    <span th:text="${success}">Success</span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                <div th:if="${error}" class="alert alert-danger alert-dismissible fade show rounded-3 border-0 shadow-sm" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    <span th:text="${error}">Error</span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+
+                <div class="row g-4 mb-4">
+                    <div class="col-sm-6 col-xl-3">
+                        <div class="card h-100 border-0 shadow-sm"><div class="card-body">
+                            <div class="text-muted fw-semibold text-uppercase mb-2" style="font-size: 0.75rem;">Total Fees</div>
+                            <h4 class="fw-bold mb-0 text-dark" th:text="${'₹' + #numbers.formatDecimal(totalFees, 1, 'COMMA', 2, 'POINT')}">₹0.00</h4>
+                        </div></div>
+                    </div>
+                    <div class="col-sm-6 col-xl-3">
+                        <div class="card h-100 border-0 shadow-sm"><div class="card-body">
+                            <div class="text-muted fw-semibold text-uppercase mb-2" style="font-size: 0.75rem;">Collected</div>
+                            <h4 class="fw-bold mb-0 text-success" th:text="${'₹' + #numbers.formatDecimal(collectedFees, 1, 'COMMA', 2, 'POINT')}">₹0.00</h4>
+                        </div></div>
+                    </div>
+                    <div class="col-sm-6 col-xl-3">
+                        <div class="card h-100 border-0 shadow-sm"><div class="card-body">
+                            <div class="text-muted fw-semibold text-uppercase mb-2" style="font-size: 0.75rem;">Pending</div>
+                            <h4 class="fw-bold mb-0 text-warning" th:text="${'₹' + #numbers.formatDecimal(pendingFees, 1, 'COMMA', 2, 'POINT')}">₹0.00</h4>
+                        </div></div>
+                    </div>
+                    <div class="col-sm-6 col-xl-3">
+                        <div class="card h-100 border-0 shadow-sm"><div class="card-body">
+                            <div class="text-muted fw-semibold text-uppercase mb-2" style="font-size: 0.75rem;">Overdue</div>
+                            <h4 class="fw-bold mb-0 text-danger" th:text="${'₹' + #numbers.formatDecimal(overdueFees, 1, 'COMMA', 2, 'POINT')}">₹0.00</h4>
+                        </div></div>
                     </div>
                 </div>
 
-                <div class="stat-card">
-                    <div class="stat-icon green">
-                        <i class="bi bi-check-circle"></i>
+                <div class="card">
+                    <div class="card-header">
+                        <form th:action="@{/admin/fees}" method="get" class="row g-2 align-items-end">
+                            <div class="col-lg-3 col-md-6">
+                                <label for="feeSearch" class="form-label small fw-semibold mb-1">Student search</label>
+                                <input id="feeSearch" type="search" name="search" class="form-control"
+                                       placeholder="Name or email" th:value="${search}" />
+                            </div>
+                            <div class="col-lg-2 col-md-6">
+                                <label for="feeStudent" class="form-label small fw-semibold mb-1">Student</label>
+                                <select id="feeStudent" name="studentId" class="form-select">
+                                    <option value="">All students</option>
+                                    <option th:each="student : ${students}" th:value="${student.id}"
+                                            th:selected="${selectedStudentId != null and selectedStudentId == student.id}"
+                                            th:text="${student.firstName + ' ' + student.lastName}"></option>
+                                </select>
+                            </div>
+                            <div class="col-lg-2 col-md-6">
+                                <label for="feeStatus" class="form-label small fw-semibold mb-1">Status</label>
+                                <select id="feeStatus" name="status" class="form-select">
+                                    <option value="">All statuses</option>
+                                    <option th:each="statusOption : ${paymentStatuses}" th:value="${statusOption}"
+                                            th:selected="${selectedStatus == statusOption.name()}"
+                                            th:text="${statusOption}"></option>
+                                </select>
+                            </div>
+                            <div class="col-lg-2 col-md-6">
+                                <label for="academicYearFilter" class="form-label small fw-semibold mb-1">Academic year</label>
+                                <input id="academicYearFilter" type="text" name="academicYear" class="form-control"
+                                       placeholder="2026-2027" th:value="${selectedAcademicYear}" />
+                            </div>
+                            <div class="col-lg-2 col-md-6">
+                                <div class="form-check mb-2">
+                                    <input id="overdueOnly" type="checkbox" name="overdueOnly" value="true"
+                                           class="form-check-input" th:checked="${overdueOnly}" />
+                                    <label class="form-check-label" for="overdueOnly">Overdue only</label>
+                                </div>
+                                <button class="btn btn-outline-primary w-100" type="submit"><i class="bi bi-search me-1"></i>Filter</button>
+                            </div>
+                            <div class="col-lg-1 col-md-6">
+                                <a class="btn btn-light border w-100" th:href="@{/admin/fees}">Clear</a>
+                            </div>
+                        </form>
                     </div>
-                    <div>
-                        <span>Collected</span>
-                        <h3>₹9,82,500</h3>
-                        <small>78.9% collected</small>
-                    </div>
-                </div>
-
-                <div class="stat-card">
-                    <div class="stat-icon orange">
-                        <i class="bi bi-clock-history"></i>
-                    </div>
-                    <div>
-                        <span>Pending</span>
-                        <h3>₹2,62,500</h3>
-                        <small>Needs attention</small>
-                    </div>
-                </div>
-
-                <div class="stat-card">
-                    <div class="stat-icon red">
-                        <i class="bi bi-exclamation-circle"></i>
-                    </div>
-                    <div>
-                        <span>Overdue</span>
-                        <h3>₹87,500</h3>
-                        <small>Past due date</small>
-                    </div>
-                </div>
-
-            </div>
-
-
-            <!-- COLLECTION PROGRESS -->
-            <div class="finance-card progress-card">
-
-                <div class="card-heading">
-                    <div>
-                        <h4>Fee Collection Progress</h4>
-                        <p>Current academic year</p>
-                    </div>
-
-                    <strong>78.9%</strong>
-                </div>
-
-                <div class="progress">
-                    <div class="progress-bar" style="width:78.9%"></div>
-                </div>
-
-                <div class="progress-info">
-                    <span>₹9,82,500 collected</span>
-                    <span>₹12,45,000 total</span>
-                </div>
-
-            </div>
-
-
-            <!-- STUDENT FEES -->
-            <div class="finance-card">
-
-                <div class="table-header">
-
-                    <div>
-                        <h4>Student Fee Records</h4>
-                        <p>Track payments and outstanding balances</p>
-                    </div>
-
-                    <div class="table-tools">
-
-                        <div class="search-box">
-                            <i class="bi bi-search"></i>
-                            <input
-                                type="text"
-                                id="feeSearch"
-                                placeholder="Search student..."
-                                onkeyup="filterFees()">
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Student</th>
+                                        <th>Academic Period</th>
+                                        <th>Total</th>
+                                        <th>Paid</th>
+                                        <th>Outstanding</th>
+                                        <th>Status</th>
+                                        <th>Due Date</th>
+                                        <th class="text-end">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="fee : ${feeList}">
+                                        <td>
+                                            <div class="fw-semibold text-dark" th:text="${fee.student.firstName + ' ' + fee.student.lastName}">Student</div>
+                                            <small class="text-muted" th:text="${fee.student.email}">student@example.com</small>
+                                        </td>
+                                        <td>
+                                            <div th:text="${fee.academicYear}">2026-2027</div>
+                                            <small class="text-muted" th:text="${'Semester ' + fee.semester}">Semester</small>
+                                        </td>
+                                        <td th:text="${'₹' + #numbers.formatDecimal(fee.totalAmount, 1, 'COMMA', 2, 'POINT')}">₹0.00</td>
+                                        <td th:text="${'₹' + #numbers.formatDecimal(fee.paidAmount, 1, 'COMMA', 2, 'POINT')}">₹0.00</td>
+                                        <td class="fw-semibold" th:text="${'₹' + #numbers.formatDecimal(fee.outstandingAmount, 1, 'COMMA', 2, 'POINT')}">₹0.00</td>
+                                        <td>
+                                            <span class="badge rounded-pill"
+                                                  th:classappend="${fee.paymentStatus.name() == 'PAID' ? 'badge-soft-success' : (fee.paymentStatus.name() == 'PARTIAL' ? 'badge-soft-warning' : 'badge-soft-danger')}"
+                                                  th:text="${fee.paymentStatus}">PENDING</span>
+                                            <span th:if="${fee.overdue}" class="badge badge-soft-danger rounded-pill ms-1">OVERDUE</span>
+                                        </td>
+                                        <td th:text="${#temporals.format(fee.dueDate, 'dd MMM yyyy')}">Date</td>
+                                        <td class="text-end">
+                                            <div class="d-flex justify-content-end gap-2">
+                                                <button type="button" class="btn btn-sm btn-outline-success"
+                                                        th:if="${fee.outstandingAmount.compareTo(T(java.math.BigDecimal).ZERO) > 0}"
+                                                        th:attr="data-id=${fee.id},data-outstanding=${fee.outstandingAmount}"
+                                                        onclick="populatePaymentForm(this)">
+                                                    <i class="bi bi-cash-coin me-1"></i> Payment
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-outline-primary"
+                                                        th:attr="data-id=${fee.id},data-student-id=${fee.student.id},data-total=${fee.totalAmount},data-paid=${fee.paidAmount},data-due-date=${fee.dueDate},data-payment-date=${fee.paymentDate},data-academic-year=${fee.academicYear},data-semester=${fee.semester}"
+                                                        onclick="populateFeeForm(this)">
+                                                    <i class="bi bi-pencil-square me-1"></i> Edit
+                                                </button>
+                                                <form th:action="@{/admin/fees/delete}" method="post" class="m-0">
+                                                    <input type="hidden" name="id" th:value="${fee.id}" />
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger"
+                                                            onclick="return confirm('Delete this fee record?')">
+                                                        <i class="bi bi-trash me-1"></i> Delete
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr th:if="${#lists.isEmpty(feeList)}">
+                                        <td colspan="8" class="text-center py-5 text-muted">
+                                            <i class="bi bi-receipt fs-1 d-block mb-3 opacity-50"></i>
+                                            <h5 class="fw-semibold">No fee records found</h5>
+                                            <p class="mb-0">Add a fee record or adjust your filters.</p>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
-
-                        <select id="statusFilter" onchange="filterFees()">
-                            <option value="all">All Status</option>
-                            <option value="paid">Paid</option>
-                            <option value="pending">Pending</option>
-                            <option value="overdue">Overdue</option>
-                        </select>
-
                     </div>
-
                 </div>
-
-
-                <div class="table-responsive">
-
-                    <table class="fee-table">
-
-                        <thead>
-                        <tr>
-                            <th>Student</th>
-                            <th>Department</th>
-                            <th>Total Fee</th>
-                            <th>Paid</th>
-                            <th>Balance</th>
-                            <th>Due Date</th>
-                            <th>Status</th>
-                            <th>Action</th>
-                        </tr>
-                        </thead>
-
-                        <tbody id="feeTable">
-
-                        <tr data-status="paid">
-                            <td>
-                                <div class="student-cell">
-                                    <div class="avatar">AS</div>
-                                    <div>
-                                        <strong>Aarav Sharma</strong>
-                                        <small>CF2024001</small>
-                                    </div>
-                                </div>
-                            </td>
-
-                            <td>Computer Science</td>
-                            <td>₹75,000</td>
-                            <td>₹75,000</td>
-                            <td>₹0</td>
-                            <td>15 Sep 2026</td>
-
-                            <td>
-                                <span class="status paid">
-                                    <i class="bi bi-check-circle-fill"></i>
-                                    Paid
-                                </span>
-                            </td>
-
-                            <td>
-                                <button class="icon-btn" onclick="viewReceipt('Aarav Sharma')">
-                                    <i class="bi bi-receipt"></i>
-                                </button>
-                            </td>
-                        </tr>
-
-
-                        <tr data-status="pending">
-                            <td>
-                                <div class="student-cell">
-                                    <div class="avatar purple">PS</div>
-                                    <div>
-                                        <strong>Priya Shah</strong>
-                                        <small>CF2024002</small>
-                                    </div>
-                                </div>
-                            </td>
-
-                            <td>Information Technology</td>
-                            <td>₹70,000</td>
-                            <td>₹50,000</td>
-                            <td>₹20,000</td>
-                            <td>20 Oct 2026</td>
-
-                            <td>
-                                <span class="status pending">
-                                    <i class="bi bi-clock-fill"></i>
-                                    Pending
-                                </span>
-                            </td>
-
-                            <td>
-                                <button class="icon-btn" onclick="recordStudentPayment('Priya Shah')">
-                                    <i class="bi bi-plus-circle"></i>
-                                </button>
-                            </td>
-                        </tr>
-
-
-                        <tr data-status="overdue">
-                            <td>
-                                <div class="student-cell">
-                                    <div class="avatar orange">RK</div>
-                                    <div>
-                                        <strong>Rohan Kulkarni</strong>
-                                        <small>CF2024003</small>
-                                    </div>
-                                </div>
-                            </td>
-
-                            <td>Electronics</td>
-                            <td>₹68,000</td>
-                            <td>₹40,000</td>
-                            <td>₹28,000</td>
-                            <td>30 Aug 2026</td>
-
-                            <td>
-                                <span class="status overdue">
-                                    <i class="bi bi-exclamation-circle-fill"></i>
-                                    Overdue
-                                </span>
-                            </td>
-
-                            <td>
-                                <button class="icon-btn danger" onclick="sendReminder('Rohan Kulkarni')">
-                                    <i class="bi bi-bell"></i>
-                                </button>
-                            </td>
-                        </tr>
-
-
-                        <tr data-status="paid">
-                            <td>
-                                <div class="student-cell">
-                                    <div class="avatar green">NK</div>
-                                    <div>
-                                        <strong>Neha Kapoor</strong>
-                                        <small>CF2024004</small>
-                                    </div>
-                                </div>
-                            </td>
-
-                            <td>Computer Engineering</td>
-                            <td>₹72,000</td>
-                            <td>₹72,000</td>
-                            <td>₹0</td>
-                            <td>12 Sep 2026</td>
-
-                            <td>
-                                <span class="status paid">
-                                    <i class="bi bi-check-circle-fill"></i>
-                                    Paid
-                                </span>
-                            </td>
-
-                            <td>
-                                <button class="icon-btn" onclick="viewReceipt('Neha Kapoor')">
-                                    <i class="bi bi-receipt"></i>
-                                </button>
-                            </td>
-                        </tr>
-
-
-                        <tr data-status="pending">
-                            <td>
-                                <div class="student-cell">
-                                    <div class="avatar pink">AM</div>
-                                    <div>
-                                        <strong>Aditya Mehta</strong>
-                                        <small>CF2024005</small>
-                                    </div>
-                                </div>
-                            </td>
-
-                            <td>Mechanical Engineering</td>
-                            <td>₹65,000</td>
-                            <td>₹45,000</td>
-                            <td>₹20,000</td>
-                            <td>25 Oct 2026</td>
-
-                            <td>
-                                <span class="status pending">
-                                    <i class="bi bi-clock-fill"></i>
-                                    Pending
-                                </span>
-                            </td>
-
-                            <td>
-                                <button class="icon-btn" onclick="recordStudentPayment('Aditya Mehta')">
-                                    <i class="bi bi-plus-circle"></i>
-                                </button>
-                            </td>
-                        </tr>
-
-                        </tbody>
-
-                    </table>
-
-                </div>
-
             </div>
-
         </div>
     </div>
-</div>
 
-
-<!-- PAYMENT MODAL -->
-<div class="modal-overlay" id="paymentModal">
-
-    <div class="modal-box">
-
-        <div class="modal-header">
-            <div>
-                <h3>Record Payment</h3>
-                <p>Add a new student fee payment</p>
+    <div class="modal fade" id="feeModal" tabindex="-1" aria-labelledby="feeModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+                <form th:action="@{/admin/fees/save}" method="post">
+                    <div class="modal-header border-0 pb-0 px-4 pt-4">
+                        <h5 class="modal-title fw-bold" id="feeModalLabel">Fee Record</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body px-4 py-3">
+                        <input type="hidden" id="feeId" name="id" />
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="feeStudentForm" class="form-label fw-semibold">Student</label>
+                                <select id="feeStudentForm" name="studentId" class="form-select" required>
+                                    <option value="">Select student</option>
+                                    <option th:each="student : ${students}" th:value="${student.id}"
+                                            th:text="${student.firstName + ' ' + student.lastName + ' (' + student.email + ')'}"></option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="feeAcademicYear" class="form-label fw-semibold">Academic year</label>
+                                <input id="feeAcademicYear" name="academicYear" type="text" class="form-control"
+                                       pattern="[0-9]{4}-[0-9]{4}" placeholder="2026-2027" maxlength="9" required />
+                            </div>
+                            <div class="col-md-6">
+                                <label for="feeSemester" class="form-label fw-semibold">Semester</label>
+                                <input id="feeSemester" name="semester" type="number" min="1" max="12" class="form-control" required />
+                            </div>
+                            <div class="col-md-6">
+                                <label for="feeDueDate" class="form-label fw-semibold">Due date</label>
+                                <input id="feeDueDate" name="dueDate" type="date" class="form-control" required />
+                            </div>
+                            <div class="col-md-6">
+                                <label for="feeTotal" class="form-label fw-semibold">Total fee</label>
+                                <input id="feeTotal" name="totalAmount" type="number" min="0.01" step="0.01" class="form-control" required />
+                            </div>
+                            <div class="col-md-6">
+                                <label for="feePaid" class="form-label fw-semibold">Paid amount</label>
+                                <input id="feePaid" name="paidAmount" type="number" min="0" step="0.01" class="form-control" value="0.00" required />
+                            </div>
+                            <div class="col-md-6">
+                                <label for="feePaymentDate" class="form-label fw-semibold">Payment date (if paid)</label>
+                                <input id="feePaymentDate" name="paymentDate" type="date" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="form-text mt-3">Outstanding amount and payment status are calculated from the total and paid amounts.</div>
+                    </div>
+                    <div class="modal-footer border-0 px-4 pb-4 pt-0">
+                        <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save Fee Record</button>
+                    </div>
+                </form>
             </div>
-
-            <button onclick="closePaymentModal()">
-                <i class="bi bi-x-lg"></i>
-            </button>
         </div>
-
-
-        <div class="form-grid">
-
-            <div class="form-group">
-                <label>Student Name</label>
-                <input type="text" placeholder="Enter student name">
-            </div>
-
-            <div class="form-group">
-                <label>Student ID</label>
-                <input type="text" placeholder="CF2024XXX">
-            </div>
-
-            <div class="form-group">
-                <label>Amount</label>
-                <input type="number" placeholder="₹ Amount">
-            </div>
-
-            <div class="form-group">
-                <label>Payment Method</label>
-
-                <select>
-                    <option>Online</option>
-                    <option>Cash</option>
-                    <option>Bank Transfer</option>
-                    <option>UPI</option>
-                </select>
-
-            </div>
-
-            <div class="form-group full">
-                <label>Transaction ID</label>
-                <input type="text" placeholder="Enter transaction/reference ID">
-            </div>
-
-        </div>
-
-
-        <div class="modal-actions">
-
-            <button class="cancel-btn" onclick="closePaymentModal()">
-                Cancel
-            </button>
-
-            <button class="primary-btn" onclick="savePayment()">
-                <i class="bi bi-check-lg"></i>
-                Save Payment
-            </button>
-
-        </div>
-
     </div>
 
-</div>
-
-
-<style>
-
-* {
-    box-sizing: border-box;
-}
-
-body {
-    background: #f6f8fc;
-}
-
-
-/* HEADER */
-
-.page-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 28px;
-}
-
-.page-title {
-    font-size: 28px;
-    font-weight: 700;
-    color: #172033;
-    margin-bottom: 6px;
-}
-
-.page-subtitle {
-    color: #7b8498;
-    margin: 0;
-}
-
-
-/* BUTTON */
-
-.primary-btn {
-    border: none;
-    background: #2563eb;
-    color: white;
-    padding: 11px 18px;
-    border-radius: 10px;
-    font-weight: 600;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    transition: .2s;
-}
-
-.primary-btn:hover {
-    background: #1d4ed8;
-    transform: translateY(-1px);
-}
-
-
-/* STATS */
-
-.stats-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 18px;
-    margin-bottom: 20px;
-}
-
-.stat-card {
-    background: white;
-    border: 1px solid #e9edf5;
-    border-radius: 15px;
-    padding: 21px;
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    box-shadow: 0 4px 18px rgba(25, 35, 55, .04);
-}
-
-.stat-card span {
-    font-size: 13px;
-    color: #8992a6;
-}
-
-.stat-card h3 {
-    margin: 5px 0;
-    color: #172033;
-    font-size: 22px;
-}
-
-.stat-card small {
-    color: #9ba3b4;
-}
-
-.stat-icon {
-    width: 48px;
-    height: 48px;
-    border-radius: 13px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 21px;
-}
-
-.stat-icon.blue {
-    background: #eaf2ff;
-    color: #2563eb;
-}
-
-.stat-icon.green {
-    background: #e9f9f0;
-    color: #16a34a;
-}
-
-.stat-icon.orange {
-    background: #fff4e5;
-    color: #ea8a00;
-}
-
-.stat-icon.red {
-    background: #fff0f0;
-    color: #dc2626;
-}
-
-
-/* CARD */
-
-.finance-card {
-    background: white;
-    border: 1px solid #e9edf5;
-    border-radius: 16px;
-    margin-bottom: 22px;
-    box-shadow: 0 4px 18px rgba(25, 35, 55, .035);
-    overflow: hidden;
-}
-
-
-/* PROGRESS */
-
-.progress-card {
-    padding: 23px;
-}
-
-.card-heading {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.card-heading h4 {
-    margin: 0;
-    color: #172033;
-}
-
-.card-heading p {
-    margin: 5px 0 0;
-    color: #929aad;
-    font-size: 13px;
-}
-
-.card-heading strong {
-    font-size: 20px;
-    color: #2563eb;
-}
-
-.progress {
-    height: 9px;
-    background: #edf1f7;
-    border-radius: 20px;
-    overflow: hidden;
-    margin-top: 20px;
-}
-
-.progress-bar {
-    height: 100%;
-    background: #2563eb;
-    border-radius: 20px;
-}
-
-.progress-info {
-    display: flex;
-    justify-content: space-between;
-    color: #8992a6;
-    font-size: 12px;
-    margin-top: 9px;
-}
-
-
-/* TABLE HEADER */
-
-.table-header {
-    padding: 22px 24px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 15px;
-}
-
-.table-header h4 {
-    margin: 0;
-    color: #172033;
-}
-
-.table-header p {
-    margin: 5px 0 0;
-    color: #929aad;
-    font-size: 13px;
-}
-
-.table-tools {
-    display: flex;
-    gap: 10px;
-}
-
-.search-box {
-    display: flex;
-    align-items: center;
-    border: 1px solid #dfe4ed;
-    border-radius: 9px;
-    padding: 0 11px;
-    background: white;
-}
-
-.search-box i {
-    color: #9aa3b5;
-}
-
-.search-box input {
-    border: none;
-    outline: none;
-    padding: 10px;
-    width: 190px;
-}
-
-.table-tools select {
-    border: 1px solid #dfe4ed;
-    border-radius: 9px;
-    padding: 0 12px;
-    background: white;
-    color: #555f72;
-    outline: none;
-}
-
-
-/* TABLE */
-
-.fee-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-.fee-table th {
-    background: #fafbfe;
-    color: #8992a6;
-    font-size: 12px;
-    text-transform: uppercase;
-    letter-spacing: .3px;
-    padding: 14px 20px;
-    text-align: left;
-    border-top: 1px solid #edf0f5;
-    border-bottom: 1px solid #edf0f5;
-}
-
-.fee-table td {
-    padding: 17px 20px;
-    border-bottom: 1px solid #f0f2f6;
-    color: #4c566b;
-    font-size: 13px;
-}
-
-.fee-table tbody tr:hover {
-    background: #fafcff;
-}
-
-
-/* STUDENT */
-
-.student-cell {
-    display: flex;
-    align-items: center;
-    gap: 11px;
-}
-
-.student-cell strong {
-    display: block;
-    color: #252e40;
-}
-
-.student-cell small {
-    display: block;
-    color: #9aa3b4;
-    margin-top: 3px;
-}
-
-.avatar {
-    width: 37px;
-    height: 37px;
-    border-radius: 10px;
-    background: #eaf2ff;
-    color: #2563eb;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 700;
-    font-size: 12px;
-}
-
-.avatar.purple {
-    background: #f0ebff;
-    color: #7c3aed;
-}
-
-.avatar.orange {
-    background: #fff1df;
-    color: #ea8a00;
-}
-
-.avatar.green {
-    background: #e8f9ef;
-    color: #16a34a;
-}
-
-.avatar.pink {
-    background: #ffeaf2;
-    color: #db2777;
-}
-
-
-/* STATUS */
-
-.status {
-    padding: 6px 10px;
-    border-radius: 20px;
-    font-size: 11px;
-    font-weight: 600;
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-}
-
-.status.paid {
-    background: #eaf9f0;
-    color: #15803d;
-}
-
-.status.pending {
-    background: #fff5df;
-    color: #c77700;
-}
-
-.status.overdue {
-    background: #fff0f0;
-    color: #dc2626;
-}
-
-
-/* ACTION */
-
-.icon-btn {
-    width: 34px;
-    height: 34px;
-    border: 1px solid #e2e6ee;
-    background: white;
-    border-radius: 8px;
-    color: #2563eb;
-    cursor: pointer;
-}
-
-.icon-btn:hover {
-    background: #eff5ff;
-}
-
-.icon-btn.danger {
-    color: #dc2626;
-}
-
-
-/* MODAL */
-
-.modal-overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(20, 27, 40, .45);
-    z-index: 9999;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-}
-
-.modal-box {
-    width: 100%;
-    max-width: 600px;
-    background: white;
-    border-radius: 18px;
-    padding: 25px;
-    box-shadow: 0 20px 60px rgba(0,0,0,.18);
-}
-
-.modal-header {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 25px;
-}
-
-.modal-header h3 {
-    margin: 0;
-    color: #172033;
-}
-
-.modal-header p {
-    color: #929aad;
-    margin: 5px 0 0;
-    font-size: 13px;
-}
-
-.modal-header button {
-    border: none;
-    background: #f4f6fa;
-    width: 35px;
-    height: 35px;
-    border-radius: 9px;
-    cursor: pointer;
-}
-
-.form-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 17px;
-}
-
-.form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 7px;
-}
-
-.form-group.full {
-    grid-column: 1 / -1;
-}
-
-.form-group label {
-    font-size: 13px;
-    font-weight: 600;
-    color: #4b5568;
-}
-
-.form-group input,
-.form-group select {
-    border: 1px solid #dfe4ed;
-    border-radius: 9px;
-    padding: 11px 12px;
-    outline: none;
-}
-
-.form-group input:focus,
-.form-group select:focus {
-    border-color: #2563eb;
-}
-
-.modal-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-    margin-top: 25px;
-}
-
-.cancel-btn {
-    border: 1px solid #dfe4ed;
-    background: white;
-    padding: 10px 17px;
-    border-radius: 9px;
-    cursor: pointer;
-}
-
-
-/* RESPONSIVE */
-
-@media (max-width: 1100px) {
-
-    .stats-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-
-    .table-header {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-
-}
-
-@media (max-width: 700px) {
-
-    .stats-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .page-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 15px;
-    }
-
-    .table-tools {
-        width: 100%;
-        flex-direction: column;
-    }
-
-    .search-box input {
-        width: 100%;
-    }
-
-    .table-responsive {
-        overflow-x: auto;
-    }
-
-    .fee-table {
-        min-width: 950px;
-    }
-
-    .form-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .form-group.full {
-        grid-column: auto;
-    }
-
-}
-
-</style>
-
-
-<script>
-
-function filterFees() {
-
-    const search =
-        document.getElementById("feeSearch")
-            .value.toLowerCase();
-
-    const status =
-        document.getElementById("statusFilter")
-            .value;
-
-    const rows =
-        document.querySelectorAll("#feeTable tr");
-
-    rows.forEach(row => {
-
-        const text =
-            row.innerText.toLowerCase();
-
-        const rowStatus =
-            row.dataset.status;
-
-        const matchesSearch =
-            text.includes(search);
-
-        const matchesStatus =
-            status === "all" ||
-            rowStatus === status;
-
-        row.style.display =
-            matchesSearch && matchesStatus
-                ? ""
-                : "none";
-
-    });
-}
-
-
-function openPaymentModal() {
-
-    document.getElementById("paymentModal")
-        .style.display = "flex";
-
-}
-
-
-function closePaymentModal() {
-
-    document.getElementById("paymentModal")
-        .style.display = "none";
-
-}
-
-
-function savePayment() {
-
-    alert(
-        "Payment recorded successfully! Backend payment processing can be connected later."
-    );
-
-    closePaymentModal();
-
-}
-
-
-function viewReceipt(student) {
-
-    alert(
-        "Opening payment receipt for " +
-        student
-    );
-
-}
-
-
-function recordStudentPayment(student) {
-
-    openPaymentModal();
-
-}
-
-
-function sendReminder(student) {
-
-    alert(
-        "Payment reminder prepared for " +
-        student
-    );
-
-}
-
-
-window.onclick = function(event) {
-
-    const modal =
-        document.getElementById("paymentModal");
-
-    if (event.target === modal) {
-        closePaymentModal();
-    }
-
-};
-
-</script>
-
+    <div class="modal fade" id="paymentModal" tabindex="-1" aria-labelledby="paymentModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+                <form th:action="@{/admin/fees/payment}" method="post">
+                    <div class="modal-header border-0 pb-0 px-4 pt-4">
+                        <h5 class="modal-title fw-bold" id="paymentModalLabel">Record Payment</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body px-4 py-3">
+                        <input type="hidden" id="paymentFeeId" name="id" />
+                        <p class="text-muted">Outstanding balance: <strong id="paymentOutstanding" class="text-dark"></strong></p>
+                        <div class="mb-3">
+                            <label for="paymentAmount" class="form-label fw-semibold">Payment amount</label>
+                            <input id="paymentAmount" name="paymentAmount" type="number" min="0.01" step="0.01" class="form-control" required />
+                        </div>
+                        <div>
+                            <label for="paymentDate" class="form-label fw-semibold">Payment date</label>
+                            <input id="paymentDate" name="paymentDate" type="date" class="form-control" />
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0 px-4 pb-4 pt-0">
+                        <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Record Payment</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function populateFeeForm(button) {
+            const modal = new bootstrap.Modal(document.getElementById('feeModal'));
+            document.getElementById('feeId').value = button.getAttribute('data-id') || '';
+            document.getElementById('feeStudentForm').value = button.getAttribute('data-student-id') || '';
+            document.getElementById('feeTotal').value = button.getAttribute('data-total') || '';
+            document.getElementById('feePaid').value = button.getAttribute('data-paid') || '0.00';
+            document.getElementById('feeDueDate').value = button.getAttribute('data-due-date') || '';
+            document.getElementById('feePaymentDate').value = button.getAttribute('data-payment-date') || '';
+            document.getElementById('feeAcademicYear').value = button.getAttribute('data-academic-year') || '';
+            document.getElementById('feeSemester').value = button.getAttribute('data-semester') || '';
+            document.getElementById('feeModalLabel').textContent = 'Edit Fee Record';
+            modal.show();
+        }
+
+        function populatePaymentForm(button) {
+            const modal = new bootstrap.Modal(document.getElementById('paymentModal'));
+            const outstanding = Number(button.getAttribute('data-outstanding'));
+            document.getElementById('paymentFeeId').value = button.getAttribute('data-id') || '';
+            document.getElementById('paymentOutstanding').textContent = '₹' + outstanding.toFixed(2);
+            document.getElementById('paymentAmount').value = '';
+            document.getElementById('paymentAmount').max = outstanding.toFixed(2);
+            document.getElementById('paymentDate').value = '';
+            modal.show();
+        }
+
+        document.getElementById('feeModal').addEventListener('hidden.bs.modal', function () {
+            this.querySelector('form').reset();
+            document.getElementById('feeId').value = '';
+            document.getElementById('feePaid').value = '0.00';
+            document.getElementById('feeModalLabel').textContent = 'Fee Record';
+        });
+    </script>
 </body>
 </html>

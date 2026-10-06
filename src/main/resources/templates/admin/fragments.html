@@ -319,17 +319,23 @@
                 </a>
                 
                 <p class="text-uppercase text-muted fw-bold mb-2 mt-4 ms-3" style="font-size: 0.7rem; letter-spacing: 1px;">Academics</p>
-                <a href="#" th:classappend="${activeLink == 'attendance'} ? 'active' : ''">
+                <a th:href="@{/admin/attendance}" th:classappend="${activeLink == 'attendance'} ? 'active' : ''">
                     <i class="bi bi-calendar-check-fill"></i> Attendance
                 </a>
-                <a href="#" th:classappend="${activeLink == 'assignments'} ? 'active' : ''">
+                <a th:href="@{/admin/assignments}" th:classappend="${activeLink == 'assignments'} ? 'active' : ''">
                     <i class="bi bi-journal-text"></i> Assignments
                 </a>
-                <a href="#" th:classappend="${activeLink == 'documents'} ? 'active' : ''">
+                <a th:href="@{/admin/documents}" th:classappend="${activeLink == 'documents'} ? 'active' : ''">
                     <i class="bi bi-folder-fill"></i> Documents
                 </a>
-                <a href="#" th:classappend="${activeLink == 'events'} ? 'active' : ''">
+                <a th:href="@{/admin/events}" th:classappend="${activeLink == 'events'} ? 'active' : ''">
                     <i class="bi bi-calendar-event-fill"></i> Events
+                </a>
+                <a th:href="@{/admin/fees}" th:classappend="${activeLink == 'fees'} ? 'active' : ''">
+                    <i class="bi bi-cash-stack"></i> Fees
+                </a>
+                <a th:href="@{/admin/reports}" th:classappend="${activeLink == 'reports'} ? 'active' : ''">
+                    <i class="bi bi-bar-chart-fill"></i> Reports
                 </a>
             </div>
             <div class="sidebar-footer">

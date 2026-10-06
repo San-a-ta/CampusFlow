@@ -1,818 +1,222 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-
 <head th:replace="~{admin/fragments :: head('Assignments')}">
 </head>
-
 <body>
+    <div class="wrapper">
+        <div th:replace="~{admin/fragments :: sidebar('assignments')}"></div>
 
-<div class="wrapper">
+        <div class="main-panel">
+            <div th:replace="~{admin/fragments :: navbar('Assignments')}"></div>
 
-    <!-- Sidebar -->
-    <div th:replace="~{admin/fragments :: sidebar('assignments')}"></div>
-
-    <div class="main-panel">
-
-        <!-- Navbar -->
-        <div th:replace="~{admin/fragments :: navbar('Assignments')}"></div>
-
-        <div class="content-padding">
-
-            <!-- Header -->
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <div>
-                    <h2 class="page-title">Assignments</h2>
-                    <p class="text-muted mb-0">
-                        Manage academic assignments and submissions
-                    </p>
+            <div class="content-padding">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h2 class="page-title">Assignments</h2>
+                        <p class="text-muted mb-0">Overview of course assignments and submissions</p>
+                    </div>
+                    <button class="btn btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#assignmentModal">
+                        <i class="bi bi-plus-lg me-1"></i> Add Assignment
+                    </button>
                 </div>
 
-                <button class="btn btn-primary shadow-sm"
-                        onclick="openAssignmentModal()">
-                    <i class="bi bi-plus-lg me-1"></i>
-                    Create Assignment
-                </button>
-            </div>
+                <div th:if="${success}" class="alert alert-success alert-dismissible fade show rounded-3 border-0 shadow-sm" role="alert">
+                    <i class="bi bi-check-circle-fill me-2"></i>
+                    <span th:text="${success}">Success</span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
 
+                <div th:if="${error}" class="alert alert-danger alert-dismissible fade show rounded-3 border-0 shadow-sm" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    <span th:text="${error}">Error</span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
 
-            <!-- Statistics -->
-            <div class="row g-3 mb-4">
-
-                <div class="col-md-3">
-                    <div class="card border-0 shadow-sm h-100">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between">
-                                <div>
-                                    <small class="text-muted">Total</small>
-                                    <h3 class="fw-bold mb-0">24</h3>
+                <div class="row g-4 mb-4">
+                    <div class="col-md-4">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="text-muted fw-semibold text-uppercase" style="font-size: 0.75rem;">Total</span>
+                                    <span class="badge badge-soft-primary rounded-pill" th:text="${#lists.size(assignmentList)}">0</span>
                                 </div>
-
-                                <div class="rounded-circle bg-primary bg-opacity-10
-                                            text-primary d-flex align-items-center
-                                            justify-content-center"
-                                     style="width:45px;height:45px;">
-                                    <i class="bi bi-journal-text fs-5"></i>
+                                <h3 class="fw-bold mb-0 text-dark" th:text="${#lists.size(assignmentList)}">0</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="text-muted fw-semibold text-uppercase" style="font-size: 0.75rem;">Subjects</span>
+                                    <span class="badge badge-soft-info rounded-pill" th:text="${#lists.size(subjects)}">0</span>
                                 </div>
+                                <h3 class="fw-bold mb-0 text-dark" th:text="${#lists.size(subjects)}">0</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="text-muted fw-semibold text-uppercase" style="font-size: 0.75rem;">Faculty</span>
+                                    <span class="badge badge-soft-success rounded-pill" th:text="${#lists.size(facultyList)}">0</span>
+                                </div>
+                                <h3 class="fw-bold mb-0 text-dark" th:text="${#lists.size(facultyList)}">0</h3>
                             </div>
                         </div>
                     </div>
                 </div>
 
-
-                <div class="col-md-3">
-                    <div class="card border-0 shadow-sm h-100">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between">
-                                <div>
-                                    <small class="text-muted">Active</small>
-                                    <h3 class="fw-bold mb-0">8</h3>
-                                </div>
-
-                                <div class="rounded-circle bg-success bg-opacity-10
-                                            text-success d-flex align-items-center
-                                            justify-content-center"
-                                     style="width:45px;height:45px;">
-                                    <i class="bi bi-play-circle fs-5"></i>
-                                </div>
-                            </div>
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Assignment List</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Title</th>
+                                        <th>Subject</th>
+                                        <th>Faculty</th>
+                                        <th>Due Date</th>
+                                        <th class="text-end">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="assignment : ${assignmentList}">
+                                        <td>
+                                            <div class="fw-semibold text-dark" th:text="${assignment.title}">Assignment Title</div>
+                                            <small class="text-muted" th:text="${#strings.abbreviate(assignment.description, 80)}">Description</small>
+                                        </td>
+                                        <td>
+                                            <div class="fw-semibold text-dark" th:text="${assignment.subject.name}">Subject Name</div>
+                                            <small class="text-muted" th:text="${assignment.subject.code}">CS101</small>
+                                        </td>
+                                        <td th:text="${assignment.faculty.firstName + ' ' + assignment.faculty.lastName}">Faculty Name</td>
+                                        <td th:text="${#temporals.format(assignment.dueDate, 'dd MMM yyyy, HH:mm')}">15 Jan 2025</td>
+                                        <td class="text-end">
+                                            <div class="d-flex justify-content-end gap-2">
+                                                <button type="button"
+                                                        class="btn btn-sm btn-outline-primary"
+                                                        th:attr="data-id=${assignment.id},data-title=${assignment.title},data-description=${assignment.description},data-due-date=${#temporals.format(assignment.dueDate, 'yyyy-MM-dd''T''HH:mm')},data-subject-id=${assignment.subject.id},data-faculty-id=${assignment.faculty.id}"
+                                                        onclick="populateAssignmentForm(this)">
+                                                    <i class="bi bi-pencil-square me-1"></i> Edit
+                                                </button>
+                                                <form th:action="@{/admin/assignments/delete}" method="post" class="m-0">
+                                                    <input type="hidden" name="id" th:value="${assignment.id}" />
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this assignment?')">
+                                                        <i class="bi bi-trash me-1"></i> Delete
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr th:if="${#lists.isEmpty(assignmentList)}">
+                                        <td colspan="5" class="text-center py-5 text-muted">
+                                            <i class="bi bi-journal-text fs-1 d-block mb-3 opacity-50"></i>
+                                            <h5 class="fw-semibold">No assignments found</h5>
+                                            <p class="mb-0">Create your first assignment to get started.</p>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
-                </div>
-
-
-                <div class="col-md-3">
-                    <div class="card border-0 shadow-sm h-100">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between">
-                                <div>
-                                    <small class="text-muted">Pending Review</small>
-                                    <h3 class="fw-bold mb-0">37</h3>
-                                </div>
-
-                                <div class="rounded-circle bg-warning bg-opacity-10
-                                            text-warning d-flex align-items-center
-                                            justify-content-center"
-                                     style="width:45px;height:45px;">
-                                    <i class="bi bi-hourglass-split fs-5"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-
-                <div class="col-md-3">
-                    <div class="card border-0 shadow-sm h-100">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between">
-                                <div>
-                                    <small class="text-muted">Completed</small>
-                                    <h3 class="fw-bold mb-0">16</h3>
-                                </div>
-
-                                <div class="rounded-circle bg-info bg-opacity-10
-                                            text-info d-flex align-items-center
-                                            justify-content-center"
-                                     style="width:45px;height:45px;">
-                                    <i class="bi bi-check2-circle fs-5"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-
-
-            <!-- Filters -->
-            <div class="card border-0 shadow-sm mb-4">
-                <div class="card-body">
-
-                    <div class="row g-3">
-
-                        <div class="col-md-5">
-                            <div class="input-group">
-                                <span class="input-group-text bg-white">
-                                    <i class="bi bi-search"></i>
-                                </span>
-
-                                <input type="text"
-                                       id="assignmentSearch"
-                                       class="form-control"
-                                       placeholder="Search assignments..."
-                                       onkeyup="filterAssignments()">
-                            </div>
-                        </div>
-
-                        <div class="col-md-3">
-                            <select id="subjectFilter"
-                                    class="form-select"
-                                    onchange="filterAssignments()">
-                                <option value="">All Subjects</option>
-                                <option value="DSA">Data Structures & Algorithms</option>
-                                <option value="DBMS">Database Management Systems</option>
-                                <option value="COA">Computer Organization</option>
-                                <option value="JAVA">Java Programming</option>
-                                <option value="MATHS">Engineering Mathematics</option>
-                            </select>
-                        </div>
-
-                        <div class="col-md-2">
-                            <select id="statusFilter"
-                                    class="form-select"
-                                    onchange="filterAssignments()">
-                                <option value="">All Status</option>
-                                <option value="ACTIVE">Active</option>
-                                <option value="COMPLETED">Completed</option>
-                                <option value="CLOSED">Closed</option>
-                            </select>
-                        </div>
-
-                        <div class="col-md-2">
-                            <button class="btn btn-light border w-100"
-                                    onclick="resetFilters()">
-                                <i class="bi bi-arrow-counterclockwise me-1"></i>
-                                Reset
-                            </button>
-                        </div>
-
-                    </div>
-
                 </div>
             </div>
-
-
-            <!-- Assignment Table -->
-            <div class="card border-0 shadow-sm">
-
-                <div class="card-body p-0">
-
-                    <div class="table-responsive">
-
-                        <table class="table table-hover align-middle mb-0">
-
-                            <thead class="table-light">
-                            <tr>
-                                <th style="padding-left:24px;">Assignment</th>
-                                <th>Subject</th>
-                                <th>Due Date</th>
-                                <th>Submissions</th>
-                                <th>Status</th>
-                                <th class="text-end"
-                                    style="padding-right:24px;">
-                                    Actions
-                                </th>
-                            </tr>
-                            </thead>
-
-
-                            <tbody id="assignmentTable">
-
-                            <tr data-subject="DSA"
-                                data-status="ACTIVE">
-
-                                <td style="padding-left:24px;">
-
-                                    <div class="d-flex align-items-center">
-
-                                        <div class="rounded-3 bg-primary bg-opacity-10
-                                                    text-primary d-flex
-                                                    align-items-center
-                                                    justify-content-center me-3"
-                                             style="width:42px;height:42px;">
-                                            <i class="bi bi-code-slash fs-5"></i>
-                                        </div>
-
-                                        <div>
-                                            <div class="fw-semibold">
-                                                Sorting Algorithms
-                                            </div>
-
-                                            <small class="text-muted">
-                                                Assignment #01
-                                            </small>
-                                        </div>
-
-                                    </div>
-
-                                </td>
-
-                                <td>
-                                    <span class="badge bg-light text-dark border">
-                                        DSA
-                                    </span>
-                                </td>
-
-                                <td>
-                                    <span class="fw-medium">
-                                        Oct 12, 2026
-                                    </span>
-                                    <br>
-                                    <small class="text-muted">
-                                        11:59 PM
-                                    </small>
-                                </td>
-
-                                <td>
-                                    <span class="fw-semibold">42</span>
-                                    <span class="text-muted">/ 60</span>
-                                </td>
-
-                                <td>
-                                    <span class="badge bg-success-subtle text-success">
-                                        Active
-                                    </span>
-                                </td>
-
-                                <td class="text-end"
-                                    style="padding-right:24px;">
-
-                                    <button class="btn btn-sm btn-light text-primary"
-                                            title="View">
-                                        <i class="bi bi-eye"></i>
-                                    </button>
-
-                                    <button class="btn btn-sm btn-light text-warning"
-                                            title="Edit">
-                                        <i class="bi bi-pencil"></i>
-                                    </button>
-
-                                    <button class="btn btn-sm btn-light text-danger"
-                                            title="Delete">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
-
-                                </td>
-
-                            </tr>
-
-
-                            <tr data-subject="DBMS"
-                                data-status="ACTIVE">
-
-                                <td style="padding-left:24px;">
-
-                                    <div class="d-flex align-items-center">
-
-                                        <div class="rounded-3 bg-info bg-opacity-10
-                                                    text-info d-flex
-                                                    align-items-center
-                                                    justify-content-center me-3"
-                                             style="width:42px;height:42px;">
-                                            <i class="bi bi-database fs-5"></i>
-                                        </div>
-
-                                        <div>
-                                            <div class="fw-semibold">
-                                                SQL Queries & Joins
-                                            </div>
-
-                                            <small class="text-muted">
-                                                Assignment #03
-                                            </small>
-                                        </div>
-
-                                    </div>
-
-                                </td>
-
-                                <td>
-                                    <span class="badge bg-light text-dark border">
-                                        DBMS
-                                    </span>
-                                </td>
-
-                                <td>
-                                    <span class="fw-medium">
-                                        Oct 15, 2026
-                                    </span>
-                                    <br>
-                                    <small class="text-muted">
-                                        11:59 PM
-                                    </small>
-                                </td>
-
-                                <td>
-                                    <span class="fw-semibold">35</span>
-                                    <span class="text-muted">/ 60</span>
-                                </td>
-
-                                <td>
-                                    <span class="badge bg-success-subtle text-success">
-                                        Active
-                                    </span>
-                                </td>
-
-                                <td class="text-end"
-                                    style="padding-right:24px;">
-
-                                    <button class="btn btn-sm btn-light text-primary">
-                                        <i class="bi bi-eye"></i>
-                                    </button>
-
-                                    <button class="btn btn-sm btn-light text-warning">
-                                        <i class="bi bi-pencil"></i>
-                                    </button>
-
-                                    <button class="btn btn-sm btn-light text-danger">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
-
-                                </td>
-
-                            </tr>
-
-
-                            <tr data-subject="COA"
-                                data-status="COMPLETED">
-
-                                <td style="padding-left:24px;">
-
-                                    <div class="d-flex align-items-center">
-
-                                        <div class="rounded-3 bg-warning bg-opacity-10
-                                                    text-warning d-flex
-                                                    align-items-center
-                                                    justify-content-center me-3"
-                                             style="width:42px;height:42px;">
-                                            <i class="bi bi-cpu fs-5"></i>
-                                        </div>
-
-                                        <div>
-                                            <div class="fw-semibold">
-                                                CPU Architecture
-                                            </div>
-
-                                            <small class="text-muted">
-                                                Assignment #02
-                                            </small>
-                                        </div>
-
-                                    </div>
-
-                                </td>
-
-                                <td>
-                                    <span class="badge bg-light text-dark border">
-                                        COA
-                                    </span>
-                                </td>
-
-                                <td>
-                                    <span class="fw-medium">
-                                        Oct 05, 2026
-                                    </span>
-                                </td>
-
-                                <td>
-                                    <span class="fw-semibold">58</span>
-                                    <span class="text-muted">/ 60</span>
-                                </td>
-
-                                <td>
-                                    <span class="badge bg-primary-subtle text-primary">
-                                        Completed
-                                    </span>
-                                </td>
-
-                                <td class="text-end"
-                                    style="padding-right:24px;">
-
-                                    <button class="btn btn-sm btn-light text-primary">
-                                        <i class="bi bi-eye"></i>
-                                    </button>
-
-                                    <button class="btn btn-sm btn-light text-warning">
-                                        <i class="bi bi-pencil"></i>
-                                    </button>
-
-                                    <button class="btn btn-sm btn-light text-danger">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
-
-                                </td>
-
-                            </tr>
-
-
-                            <tr data-subject="JAVA"
-                                data-status="ACTIVE">
-
-                                <td style="padding-left:24px;">
-
-                                    <div class="d-flex align-items-center">
-
-                                        <div class="rounded-3 bg-danger bg-opacity-10
-                                                    text-danger d-flex
-                                                    align-items-center
-                                                    justify-content-center me-3"
-                                             style="width:42px;height:42px;">
-                                            <i class="bi bi-cup-hot fs-5"></i>
-                                        </div>
-
-                                        <div>
-                                            <div class="fw-semibold">
-                                                Java OOP Concepts
-                                            </div>
-
-                                            <small class="text-muted">
-                                                Assignment #04
-                                            </small>
-                                        </div>
-
-                                    </div>
-
-                                </td>
-
-                                <td>
-                                    <span class="badge bg-light text-dark border">
-                                        JAVA
-                                    </span>
-                                </td>
-
-                                <td>
-                                    <span class="fw-medium">
-                                        Oct 18, 2026
-                                    </span>
-                                </td>
-
-                                <td>
-                                    <span class="fw-semibold">28</span>
-                                    <span class="text-muted">/ 60</span>
-                                </td>
-
-                                <td>
-                                    <span class="badge bg-success-subtle text-success">
-                                        Active
-                                    </span>
-                                </td>
-
-                                <td class="text-end"
-                                    style="padding-right:24px;">
-
-                                    <button class="btn btn-sm btn-light text-primary">
-                                        <i class="bi bi-eye"></i>
-                                    </button>
-
-                                    <button class="btn btn-sm btn-light text-warning">
-                                        <i class="bi bi-pencil"></i>
-                                    </button>
-
-                                    <button class="btn btn-sm btn-light text-danger">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
-
-                                </td>
-
-                            </tr>
-
-
-                            <tr data-subject="MATHS"
-                                data-status="CLOSED">
-
-                                <td style="padding-left:24px;">
-
-                                    <div class="d-flex align-items-center">
-
-                                        <div class="rounded-3 bg-secondary bg-opacity-10
-                                                    text-secondary d-flex
-                                                    align-items-center
-                                                    justify-content-center me-3"
-                                             style="width:42px;height:42px;">
-                                            <i class="bi bi-calculator fs-5"></i>
-                                        </div>
-
-                                        <div>
-                                            <div class="fw-semibold">
-                                                Differential Equations
-                                            </div>
-
-                                            <small class="text-muted">
-                                                Assignment #01
-                                            </small>
-                                        </div>
-
-                                    </div>
-
-                                </td>
-
-                                <td>
-                                    <span class="badge bg-light text-dark border">
-                                        MATHS
-                                    </span>
-                                </td>
-
-                                <td>
-                                    <span class="fw-medium">
-                                        Sep 28, 2026
-                                    </span>
-                                </td>
-
-                                <td>
-                                    <span class="fw-semibold">60</span>
-                                    <span class="text-muted">/ 60</span>
-                                </td>
-
-                                <td>
-                                    <span class="badge bg-secondary-subtle text-secondary">
-                                        Closed
-                                    </span>
-                                </td>
-
-                                <td class="text-end"
-                                    style="padding-right:24px;">
-
-                                    <button class="btn btn-sm btn-light text-primary">
-                                        <i class="bi bi-eye"></i>
-                                    </button>
-
-                                    <button class="btn btn-sm btn-light text-warning">
-                                        <i class="bi bi-pencil"></i>
-                                    </button>
-
-                                    <button class="btn btn-sm btn-light text-danger">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
-
-                                </td>
-
-                            </tr>
-
-                            </tbody>
-
-                        </table>
-
-                    </div>
-
-                </div>
-
-            </div>
-
         </div>
-
     </div>
 
-</div>
-
-
-<!-- Create Assignment Modal -->
-
-<div class="modal fade"
-     id="assignmentModal"
-     tabindex="-1">
-
-    <div class="modal-dialog modal-dialog-centered">
-
-        <div class="modal-content border-0 shadow">
-
-            <div class="modal-header">
-
-                <div>
-                    <h5 class="modal-title fw-bold">
-                        <i class="bi bi-journal-plus text-primary me-2"></i>
-                        Create Assignment
-                    </h5>
-
-                    <small class="text-muted">
-                        Add a new academic assignment
-                    </small>
-                </div>
-
-                <button type="button"
-                        class="btn-close"
-                        data-bs-dismiss="modal">
-                </button>
-
-            </div>
-
-
-            <div class="modal-body">
-
-                <div class="mb-3">
-
-                    <label class="form-label fw-semibold">
-                        Assignment Title
-                    </label>
-
-                    <input type="text"
-                           class="form-control"
-                           placeholder="Enter assignment title">
-
-                </div>
-
-
-                <div class="mb-3">
-
-                    <label class="form-label fw-semibold">
-                        Subject
-                    </label>
-
-                    <select class="form-select">
-
-                        <option selected disabled>
-                            Select subject
-                        </option>
-
-                        <option>Data Structures & Algorithms</option>
-                        <option>Database Management Systems</option>
-                        <option>Computer Organization</option>
-                        <option>Java Programming</option>
-                        <option>Engineering Mathematics</option>
-
-                    </select>
-
-                </div>
-
-
-                <div class="row g-3">
-
-                    <div class="col-md-6">
-
-                        <label class="form-label fw-semibold">
-                            Due Date
-                        </label>
-
-                        <input type="date"
-                               class="form-control">
-
+    <div class="modal fade" id="assignmentModal" tabindex="-1" aria-labelledby="assignmentModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+                <form th:action="@{/admin/assignments/save}" method="post">
+                    <div class="modal-header border-0 pb-0 px-4 pt-4">
+                        <h5 class="modal-title fw-bold" id="assignmentModalLabel">Assignment Details</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
+                    <div class="modal-body px-4 py-3">
+                        <input type="hidden" id="assignmentId" name="id" value="" />
 
-                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="assignmentTitle" class="form-label fw-semibold">Title</label>
+                            <input id="assignmentTitle" type="text" name="title" class="form-control" placeholder="e.g. Data Structures Assignment 1" required />
+                        </div>
 
-                        <label class="form-label fw-semibold">
-                            Max Marks
-                        </label>
+                        <div class="mb-3">
+                            <label for="assignmentDescription" class="form-label fw-semibold">Description</label>
+                            <textarea id="assignmentDescription" name="description" class="form-control" rows="4" placeholder="Describe the task, requirements, and submission instructions" required></textarea>
+                        </div>
 
-                        <input type="number"
-                               class="form-control"
-                               placeholder="100">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="assignmentSubject" class="form-label fw-semibold">Subject</label>
+                                <select id="assignmentSubject" name="subjectId" class="form-select" required>
+                                    <option value="">Select subject</option>
+                                    <option th:each="subject : ${subjects}"
+                                            th:value="${subject.id}"
+                                            th:text="${subject.name + ' (' + subject.code + ')'}">
+                                    </option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="assignmentFaculty" class="form-label fw-semibold">Faculty</label>
+                                <select id="assignmentFaculty" name="facultyId" class="form-select" required>
+                                    <option value="">Select faculty</option>
+                                    <option th:each="faculty : ${facultyList}"
+                                            th:value="${faculty.id}"
+                                            th:text="${faculty.firstName + ' ' + faculty.lastName}">
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
 
+                        <div class="mt-3">
+                            <label for="assignmentDueDate" class="form-label fw-semibold">Due Date</label>
+                            <input id="assignmentDueDate" type="datetime-local" name="dueDate" class="form-control" required />
+                        </div>
                     </div>
-
-                </div>
-
-
-                <div class="mt-3">
-
-                    <label class="form-label fw-semibold">
-                        Description
-                    </label>
-
-                    <textarea class="form-control"
-                              rows="4"
-                              placeholder="Assignment instructions..."></textarea>
-
-                </div>
-
+                    <div class="modal-footer border-0 px-4 pb-4 pt-0">
+                        <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save Assignment</button>
+                    </div>
+                </form>
             </div>
-
-
-            <div class="modal-footer">
-
-                <button class="btn btn-light"
-                        data-bs-dismiss="modal">
-                    Cancel
-                </button>
-
-                <button class="btn btn-primary"
-                        onclick="createAssignment()">
-                    <i class="bi bi-check-lg me-1"></i>
-                    Create Assignment
-                </button>
-
-            </div>
-
         </div>
-
     </div>
 
-</div>
+    <script>
+        function populateAssignmentForm(button) {
+            const modal = new bootstrap.Modal(document.getElementById('assignmentModal'));
+            const id = button.getAttribute('data-id');
+            const title = button.getAttribute('data-title');
+            const description = button.getAttribute('data-description');
+            const dueDate = button.getAttribute('data-due-date');
+            const subjectId = button.getAttribute('data-subject-id');
+            const facultyId = button.getAttribute('data-faculty-id');
 
+            document.getElementById('assignmentId').value = id || '';
+            document.getElementById('assignmentTitle').value = title || '';
+            document.getElementById('assignmentDescription').value = description || '';
+            document.getElementById('assignmentDueDate').value = dueDate || '';
+            document.getElementById('assignmentSubject').value = subjectId || '';
+            document.getElementById('assignmentFaculty').value = facultyId || '';
 
-<script>
+            document.getElementById('assignmentModalLabel').textContent = 'Edit Assignment';
+            modal.show();
+        }
 
-function filterAssignments() {
-
-    const search =
-        document.getElementById("assignmentSearch")
-        .value
-        .toLowerCase();
-
-    const subject =
-        document.getElementById("subjectFilter")
-        .value;
-
-    const status =
-        document.getElementById("statusFilter")
-        .value;
-
-    const rows =
-        document.querySelectorAll("#assignmentTable tr");
-
-    rows.forEach(row => {
-
-        const text =
-            row.innerText.toLowerCase();
-
-        const rowSubject =
-            row.dataset.subject;
-
-        const rowStatus =
-            row.dataset.status;
-
-        const matchesSearch =
-            text.includes(search);
-
-        const matchesSubject =
-            !subject || rowSubject === subject;
-
-        const matchesStatus =
-            !status || rowStatus === status;
-
-        row.style.display =
-            matchesSearch &&
-            matchesSubject &&
-            matchesStatus
-                ? ""
-                : "none";
-
-    });
-
-}
-
-
-function resetFilters() {
-
-    document.getElementById("assignmentSearch").value = "";
-    document.getElementById("subjectFilter").value = "";
-    document.getElementById("statusFilter").value = "";
-
-    filterAssignments();
-
-}
-
-
-function openAssignmentModal() {
-
-    const modal =
-        new bootstrap.Modal(
-            document.getElementById("assignmentModal")
-        );
-
-    modal.show();
-
-}
-
-
-function createAssignment() {
-
-    alert(
-        "Assignment form is ready. Backend saving will be connected next."
-    );
-
-}
-
-</script>
-
+        document.getElementById('assignmentModal').addEventListener('hidden.bs.modal', function () {
+            document.getElementById('assignmentId').value = '';
+            document.getElementById('assignmentTitle').value = '';
+            document.getElementById('assignmentDescription').value = '';
+            document.getElementById('assignmentDueDate').value = '';
+            document.getElementById('assignmentSubject').value = '';
+            document.getElementById('assignmentFaculty').value = '';
+            document.getElementById('assignmentModalLabel').textContent = 'Assignment Details';
+        });
+    </script>
 </body>
 </html>
