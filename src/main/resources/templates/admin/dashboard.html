@@ -779,13 +779,16 @@
 
             </div>
 
-            <button
-                class="report-btn"
-                onclick="generateReport()">
-
-                📥 Generate Report
-
-            </button>
+            <div class="d-flex flex-column align-items-end gap-1">
+                <button
+                    class="report-btn"
+                    id="generateReportButton"
+                    th:attr="data-report-url=@{/admin/reports/export}"
+                    onclick="generateReport()">
+                    📥 Generate Report
+                </button>
+                <span id="reportDownloadStatus" class="small" role="status" aria-live="polite"></span>
+            </div>
 
         </div>
 
@@ -1112,12 +1115,49 @@
     }
 
 
-    function generateReport() {
+    async function generateReport() {
+        const button = document.getElementById("generateReportButton");
+        const status = document.getElementById("reportDownloadStatus");
+        const originalLabel = button.textContent.trim();
+        button.disabled = true;
+        button.textContent = "Generating report...";
+        status.textContent = "";
+        status.classList.remove("text-danger", "text-success");
 
-        alert(
-            "CampusFlow report generation will be connected to the backend next."
-        );
+        try {
+            const response = await fetch(button.dataset.reportUrl, {
+                headers: { "Accept": "text/csv" }
+            });
+            if (!response.ok) {
+                throw new Error(`The server returned status ${response.status}.`);
+            }
+            if (!(response.headers.get("Content-Type") || "").toLowerCase().includes("text/csv")) {
+                throw new Error("The server did not return a CSV report.");
+            }
 
+            const report = await response.blob();
+            const disposition = response.headers.get("Content-Disposition") || "";
+            const filenameMatch = disposition.match(/filename="?([^";]+)"?/i);
+            const filename = filenameMatch
+                ? filenameMatch[1]
+                : `CampusFlow_Admin_Report_${new Date().toISOString().slice(0, 10)}.csv`;
+            const downloadUrl = URL.createObjectURL(report);
+            const downloadLink = document.createElement("a");
+            downloadLink.href = downloadUrl;
+            downloadLink.download = filename;
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            downloadLink.remove();
+            setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
+            status.textContent = "Report downloaded.";
+            status.classList.add("text-success");
+        } catch (error) {
+            status.textContent = `Unable to generate report. ${error.message || "Check your connection and try again."}`;
+            status.classList.add("text-danger");
+        } finally {
+            button.disabled = false;
+            button.textContent = originalLabel;
+        }
     }
 
 

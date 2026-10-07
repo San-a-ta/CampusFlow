@@ -68,4 +68,24 @@ class AdminNavigationTests {
                     .andExpect(status().isOk());
         }
     }
+
+    @Test
+    void dashboardGenerateReportButtonUsesReportsCsvEndpoint() throws Exception {
+        var adminRequest = SecurityMockMvcRequestPostProcessors.user(admin.getEmail()).roles("ADMIN");
+        String dashboard = mockMvc.perform(get("/admin/dashboard").with(adminRequest))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        org.junit.jupiter.api.Assertions.assertTrue(dashboard.contains("/admin/reports/export"));
+        org.junit.jupiter.api.Assertions.assertTrue(dashboard.contains("async function generateReport()"));
+        org.junit.jupiter.api.Assertions.assertFalse(dashboard.contains("CampusFlow report generation will be connected to the backend next."));
+
+        String csv = mockMvc.perform(get("/admin/reports/export").with(adminRequest))
+                .andExpect(status().isOk())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content()
+                        .contentTypeCompatibleWith("text/csv"))
+                .andReturn().getResponse().getContentAsString();
+        org.junit.jupiter.api.Assertions.assertTrue(csv.startsWith("Metric,Value"));
+        org.junit.jupiter.api.Assertions.assertTrue(csv.contains("Total Students"));
+    }
+
 }
