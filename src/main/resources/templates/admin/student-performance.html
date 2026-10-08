@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/fragments :: head('Student Academic Record')}"></head>
+<body>
+<div class="wrapper">
+    <div th:replace="~{admin/fragments :: sidebar('students')}"></div>
+    <div class="main-panel">
+        <div th:replace="~{admin/fragments :: navbar('Student Academic Record')}"></div>
+        <main class="content-padding">
+            <div class="mb-4">
+                <a th:href="@{/admin/students}" class="btn btn-light border mb-3"><i class="bi bi-arrow-left me-1"></i> Students</a>
+                <h1 class="page-title">Academic performance</h1>
+                <p class="text-muted mb-0">Database-backed academic information for this student.</p>
+            </div>
+            <div class="row g-4 mb-4">
+                <div class="col-lg-6">
+                    <section class="card h-100">
+                        <div class="card-header fw-semibold"><i class="bi bi-person-vcard me-2"></i>Student details</div>
+                        <div class="card-body">
+                            <h2 class="h4 fw-bold" th:text="${student.firstName + ' ' + student.lastName}">Student Name</h2>
+                            <dl class="row mb-0 mt-3">
+                                <dt class="col-sm-4 text-muted">Email</dt><dd class="col-sm-8" th:text="${student.email}">student@example.com</dd>
+                                <dt class="col-sm-4 text-muted">Department</dt><dd class="col-sm-8" th:text="${student.department != null ? student.department.name : 'Not assigned'}">Department</dd>
+                                <dt class="col-sm-4 text-muted">Semester</dt><dd class="col-sm-8" th:text="${student.currentSemester != null ? student.currentSemester : 'Not recorded'}">1</dd>
+                            </dl>
+                        </div>
+                    </section>
+                </div>
+                <div class="col-lg-6">
+                    <section class="card h-100">
+                        <div class="card-header fw-semibold"><i class="bi bi-calendar2-check me-2"></i>Attendance</div>
+                        <div class="card-body">
+                            <div class="d-flex align-items-baseline gap-2">
+                                <span class="display-5 fw-bold" th:text="${#numbers.formatDecimal(attendancePercentage, 1, 1) + '%'}">0%</span>
+                                <span class="text-muted">present</span>
+                            </div>
+                            <div class="progress my-3" role="progressbar"
+                                 th:attr="aria-valuenow=${attendancePercentage}"
+                                 aria-valuemin="0" aria-valuemax="100">
+                                <div class="progress-bar bg-success" th:style="|width: ${attendancePercentage}%|"></div>
+                            </div>
+                            <p class="text-muted mb-0" th:text="${presentCount + ' present out of ' + attendanceCount + ' attendance records'}">No attendance records</p>
+                        </div>
+                    </section>
+                </div>
+            </div>
+            <section class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span class="fw-semibold"><i class="bi bi-journal-bookmark me-2"></i>Subjects, marks, and attendance</span>
+                    <span class="badge badge-soft-primary" th:text="${markedSubmissionCount + ' marked submissions'}">0 marked submissions</span>
+                </div>
+                <div class="card-body">
+                    <div th:if="${#lists.isEmpty(subjectPerformance)}" class="text-center text-muted py-4">
+                        No subjects are linked to this student's department and semester.
+                    </div>
+                    <div class="accordion" id="studentSubjects">
+                        <article class="accordion-item" th:each="item, itemStat : ${subjectPerformance}">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button"
+                                        data-bs-toggle="collapse"
+                                        th:attr="data-bs-target=|#subject-${itemStat.index}|,aria-controls=|subject-${itemStat.index}|"
+                                        aria-expanded="false">
+                                    <span class="fw-semibold" th:text="${item.subject.name}">Subject</span>
+                                    <span class="badge bg-light text-dark border ms-3" th:text="${item.subject.code}">CODE</span>
+                                    <span class="text-muted small ms-auto me-3"
+                                          th:text="${#numbers.formatDecimal(item.attendancePercentage, 1, 1) + '% attendance'}">0% attendance</span>
+                                </button>
+                            </h2>
+                            <div class="accordion-collapse collapse" th:id="|subject-${itemStat.index}|">
+                                <div class="accordion-body">
+                                    <div class="row g-3 mb-3">
+                                        <div class="col-sm-6"><span class="text-muted">Attendance:</span>
+                                            <strong th:text="${item.presentRecords + ' present / ' + item.attendanceRecords + ' records'}">0 / 0</strong></div>
+                                        <div class="col-sm-6"><span class="text-muted">Semester:</span>
+                                            <strong th:text="${item.subject.semester != null ? item.subject.semester : 'Not specified'}">1</strong></div>
+                                    </div>
+                                    <h3 class="h6 fw-semibold">Recorded assignment marks</h3>
+                                    <div th:if="${#lists.isEmpty(item.submissions)}" class="text-muted small">
+                                        No assignment submissions are recorded for this subject.
+                                    </div>
+                                    <div class="table-responsive" th:if="${not #lists.isEmpty(item.submissions)}">
+                                        <table class="table table-sm align-middle">
+                                            <thead><tr><th>Assignment</th><th>Marks awarded</th><th>Faculty feedback</th></tr></thead>
+                                            <tbody>
+                                            <tr th:each="submission : ${item.submissions}">
+                                                <td th:text="${submission.assignment.title}">Assignment</td>
+                                                <td th:text="${submission.marksAwarded != null ? submission.marksAwarded : 'Not graded'}">Not graded</td>
+                                                <td th:text="${submission.facultyFeedback != null ? submission.facultyFeedback : 'No feedback recorded'}">Feedback</td>
+                                            </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </article>
+                    </div>
+                </div>
+                <div class="card-footer text-muted small">
+                    Overall grade is not calculated: the current data model has no maximum-mark scale, grade bands, or weighting rules.
+                </div>
+            </section>
+        </main>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Study Materials - CampusFlow</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/campusflow-theme.css}">
+    <script>
+        (() => {
+            const selected = localStorage.getItem('campusflow-theme') || 'system';
+            const dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            document.documentElement.dataset.theme = selected === 'system' ? (dark ? 'dark' : 'light') : selected;
+        })();
+    </script>
+    <script th:src="@{/js/campusflow-theme.js}" defer></script>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-custom border-bottom" style="background-color: #10b981;">
+    <div class="container-fluid px-4">
+        <a class="navbar-brand fw-bold" th:href="@{/faculty/dashboard}">CampusFlow · Faculty</a>
+        <div class="ms-auto d-flex align-items-center gap-3">
+            <a class="nav-link" th:href="@{/faculty/attendance}">Attendance</a>
+            <a class="nav-link" th:href="@{/faculty/assignments}">Assignments</a>
+            <a class="nav-link active" th:href="@{/faculty/materials}">Study Materials</a>
+            <label for="theme-selector" class="visually-hidden">Color theme</label>
+            <select id="theme-selector" class="form-select form-select-sm theme-control" aria-label="Color theme">
+                <option value="light">Light</option><option value="dark">Dark</option>
+                <option value="pastel">Soft Pastel</option><option value="system">System</option>
+            </select>
+            <span class="fw-semibold" th:text="${user.firstName + ' ' + user.lastName}">Faculty</span>
+            <form th:action="@{/logout}" method="post"><button class="btn btn-outline-secondary btn-sm">Logout</button></form>
+        </div>
+    </div>
+</nav>
+<main class="container-fluid px-4 py-4">
+    <div class="mb-4">
+        <h1 class="h3 fw-bold mb-1">Study Materials</h1>
+        <p class="text-muted mb-0">Share course resources with students in your assigned subjects.</p>
+    </div>
+    <div th:if="${success}" class="alert alert-success" role="status" th:text="${success}"></div>
+    <div th:if="${error}" class="alert alert-danger" role="alert" th:text="${error}"></div>
+
+    <section class="card mb-4">
+        <div class="card-header"><h2 class="h5 mb-0">Upload study material</h2></div>
+        <div class="card-body">
+            <form th:action="@{/faculty/materials/save}" method="post" enctype="multipart/form-data" class="row g-3">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                <div class="col-lg-4">
+                    <label for="materialTitle" class="form-label">Title</label>
+                    <input id="materialTitle" name="title" class="form-control" maxlength="255" required>
+                </div>
+                <div class="col-lg-4">
+                    <label for="materialSubject" class="form-label">Subject</label>
+                    <select id="materialSubject" name="subjectId" class="form-select" required>
+                        <option value="">Select an assigned subject</option>
+                        <option th:each="subject : ${subjects}" th:value="${subject.id}"
+                                th:text="${subject.name + ' (' + subject.code + ')'}"></option>
+                    </select>
+                </div>
+                <div class="col-lg-4">
+                    <label for="materialFile" class="form-label">File</label>
+                    <input id="materialFile" name="file" type="file" class="form-control"
+                           accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.csv" required>
+                    <div class="form-text">PDF, Office, TXT, or CSV; up to 10 MB.</div>
+                </div>
+                <div class="col-12">
+                    <label for="materialDescription" class="form-label">Description</label>
+                    <textarea id="materialDescription" name="description" class="form-control" rows="2"></textarea>
+                </div>
+                <div class="col-12"><button class="btn btn-success" type="submit"><i class="bi bi-cloud-arrow-up me-1"></i>Upload material</button></div>
+            </form>
+            <p th:if="${#lists.isEmpty(subjects)}" class="text-muted mt-3 mb-0">No subjects are currently assigned to your account.</p>
+        </div>
+    </section>
+
+    <section class="card">
+        <div class="card-header"><h2 class="h5 mb-0">Materials for your subjects</h2></div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead><tr><th scope="col">Title</th><th scope="col">Subject</th><th scope="col">Description</th><th scope="col">Uploaded</th><th scope="col">File</th></tr></thead>
+                <tbody>
+                <tr th:each="material : ${materials}">
+                    <td class="fw-semibold" th:text="${material.title}">Material</td>
+                    <td th:text="${material.subject.name + ' · ' + material.subject.code}">Subject</td>
+                    <td th:text="${material.description}">Description</td>
+                    <td th:text="${material.uploadDate == null ? '—' : #temporals.format(material.uploadDate, 'dd MMM yyyy')}">Date</td>
+                    <td><a class="btn btn-sm btn-outline-primary" th:href="@{/faculty/materials/{id}/download(id=${material.id})}"><i class="bi bi-download me-1"></i>Download</a></td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(materials)}"><td colspan="5" class="text-center text-muted py-4">No materials are available for your subjects yet.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+</body>
+</html>

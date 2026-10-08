@@ -1,107 +1,491 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Student Portal - CampusFlow</title>
-    <!-- Modern Font: Inter -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Bootstrap 5 & Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/campusflow-theme.css}">
+    <script>
+        (() => {
+            const selected = localStorage.getItem('campusflow-theme') || 'system';
+            const dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            document.documentElement.dataset.theme = selected === 'system' ? (dark ? 'dark' : 'light') : selected;
+        })();
+    </script>
+    <script th:src="@{/js/campusflow-theme.js}" defer></script>
     <style>
-        :root {
-            --primary: #4361ee;
-            --primary-hover: #3a56d4;
-            --secondary: #f8f9fa;
-            --dark: #0f172a;
-            --text-main: #334155;
-            --text-muted: #64748b;
+        body { font-family: 'Inter', sans-serif; }
+        .portal-main { max-width: 1320px; }
+        .portal-intro {
+            background: var(--cf-surface);
+            border: 1px solid var(--cf-border);
+            border-radius: 1rem;
+            box-shadow: 0 6px 20px var(--cf-shadow);
         }
-        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: var(--text-main); }
-        .navbar-custom { background-color: var(--primary); padding: 15px 0; box-shadow: 0 4px 12px rgba(67,97,238,0.15); }
-        .navbar-brand { font-weight: 700; color: white !important; font-size: 1.25rem; }
-        .card { border: none; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03); transition: transform 0.2s; }
-        .card-header { background-color: transparent; border-bottom: 1px solid #f1f5f9; padding: 20px; font-weight: 600; }
-        .btn-custom { border-radius: 10px; padding: 12px 20px; font-weight: 500; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100px; transition: 0.3s; }
-        .btn-custom i { font-size: 1.8rem; margin-bottom: 8px; }
-        .btn-custom:hover { transform: translateY(-3px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
-        .list-group-item { border-left: 0; border-right: 0; border-radius: 0 !important; padding: 16px 20px; }
-        .user-header { background: linear-gradient(135deg, var(--primary), #7209b7); color: white; border-radius: 16px; padding: 40px; position: relative; overflow: hidden; margin-bottom: 30px; box-shadow: 0 10px 20px rgba(67,97,238,0.2); }
-        .user-header::after { content: ''; position: absolute; right: -5%; top: -50%; width: 300px; height: 300px; background: rgba(255,255,255,0.1); border-radius: 50%; }
+        .portal-card { height: 100%; }
+        .summary-card { min-height: 132px; }
+        .summary-icon {
+            width: 44px; height: 44px; display: inline-grid; place-items: center;
+            border-radius: 14px; background: var(--cf-surface-muted); color: var(--cf-heading);
+            font-size: 1.3rem;
+        }
+        .nav-link.portal-link { color: var(--cf-text); border-radius: .7rem; white-space: nowrap; }
+        .nav-link.portal-link:hover, .nav-link.portal-link.active {
+            background: var(--cf-surface-muted); color: var(--cf-heading);
+        }
+        .detail-label { color: var(--cf-muted); font-size: .9rem; }
+        .status-pill {
+            display: inline-block; padding: .25rem .65rem; border-radius: 999px;
+            background: var(--cf-surface-muted); color: var(--cf-text); font-size: .88rem;
+        }
+        .student-table { vertical-align: middle; }
+        .empty-state { color: var(--cf-muted); border: 1px dashed var(--cf-border); border-radius: .8rem; }
+        .theme-control { min-width: 112px; width: auto; }
+        .portal-card .card-body { color: var(--cf-text); }
+        .portal-card h2, .portal-card h3, .portal-intro h1 { color: var(--cf-heading); }
+        @media (max-width: 767.98px) {
+            .portal-intro { padding: 1.25rem !important; }
+            .portal-main { margin-top: 1.25rem !important; }
+            .theme-control { min-width: 94px; }
+            .student-table { min-width: 650px; }
+        }
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-custom">
-        <div class="container">
-            <a class="navbar-brand" href="#"><i class="bi bi-mortarboard-fill me-2"></i> CampusFlow</a>
-            <div class="ms-auto d-flex align-items-center">
-                <span class="text-white me-4 fw-medium"><i class="bi bi-person-circle me-1"></i> <span th:text="${user.firstName + ' ' + user.lastName}">Student</span></span>
+<nav class="navbar navbar-expand-xl navbar-custom sticky-top">
+    <div class="container-fluid portal-main">
+        <a class="navbar-brand" th:href="@{/student/dashboard}">
+            <i class="bi bi-mortarboard-fill me-2"></i>CampusFlow
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#studentNavigation"
+                aria-controls="studentNavigation" aria-expanded="false" aria-label="Toggle student navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="studentNavigation">
+            <div class="navbar-nav me-auto my-2 my-xl-0">
+                <a class="nav-link portal-link" th:classappend="${section == 'dashboard'} ? 'active'" th:href="@{/student/dashboard}">Dashboard</a>
+                <a class="nav-link portal-link" th:classappend="${section == 'academics'} ? 'active'" th:href="@{/student/academics}">Academic Performance</a>
+                <a class="nav-link portal-link" th:classappend="${section == 'attendance'} ? 'active'" th:href="@{/student/attendance}">Attendance</a>
+                <a class="nav-link portal-link" th:classappend="${section == 'assignments'} ? 'active'" th:href="@{/student/assignments}">Assignments</a>
+                <a class="nav-link portal-link" th:classappend="${section == 'materials'} ? 'active'" th:href="@{/student/materials}">Study Materials</a>
+                <a class="nav-link portal-link" th:classappend="${section == 'events'} ? 'active'" th:href="@{/student/events}">Events</a>
+                <a class="nav-link portal-link" th:classappend="${section == 'notices'} ? 'active'" th:href="@{/student/notices}">Notices</a>
+                <a class="nav-link portal-link" th:classappend="${section == 'fees'} ? 'active'" th:href="@{/student/fees}">Fees</a>
+                <a class="nav-link portal-link" th:classappend="${section == 'helpdesk'} ? 'active'" th:href="@{/student/helpdesk}">Helpdesk</a>
+                <a class="nav-link portal-link" th:classappend="${section == 'profile'} ? 'active'" th:href="@{/student/profile}">Profile</a>
+            </div>
+            <div class="d-flex align-items-center gap-2 py-2 py-xl-0">
+                <label for="theme-selector" class="visually-hidden">Color theme</label>
+                <select id="theme-selector" class="form-select form-select-sm theme-control" aria-label="Color theme">
+                    <option value="light">Light</option>
+                    <option value="dark">Dark</option>
+                    <option value="pastel">Soft Pastel</option>
+                    <option value="system">System</option>
+                </select>
+                <span class="fw-medium text-nowrap" th:text="${student.name}">Student</span>
                 <form th:action="@{/logout}" method="post" class="m-0">
-                    <button class="btn btn-sm btn-light text-primary fw-semibold rounded-pill px-3 py-2">Logout</button>
+                    <button class="btn btn-sm btn-outline-primary rounded-pill px-3">Logout</button>
                 </form>
             </div>
         </div>
-    </nav>
-    
-    <div class="container mt-5">
-        <div class="user-header">
-            <h1 class="fw-bold mb-2">Welcome back, <span th:text="${user.firstName}">Student</span>! 👋</h1>
-            <p class="fs-5 opacity-75 mb-0">
-                Semester: <strong class="text-white" th:text="${user.currentSemester}">1</strong> &nbsp;|&nbsp; 
-                Department: <strong class="text-white" th:text="${user.department != null ? user.department.name : 'Not Assigned'}">CS</strong>
-            </p>
+    </div>
+</nav>
+
+<main class="container-fluid portal-main my-4 my-lg-5">
+    <div th:if="${success}" class="alert alert-success" role="status" th:text="${success}"></div>
+    <div th:if="${error}" class="alert alert-danger" role="alert" th:text="${error}"></div>
+
+    <section class="portal-intro p-4 p-lg-5 mb-4" th:if="${section == 'dashboard'}">
+        <div class="row align-items-center g-4">
+            <div class="col-lg">
+                <p class="detail-label mb-2">STUDENT DASHBOARD</p>
+                <h1 class="h2 fw-bold mb-2">Welcome back, <span th:text="${student.name}">Student</span></h1>
+                <p class="mb-0 text-muted">Your academic overview and campus updates in one place.</p>
+            </div>
+            <div class="col-lg-auto">
+                <div class="d-flex flex-wrap gap-3">
+                    <div><div class="detail-label">Department</div><strong th:text="${student.department ?: 'Not assigned'}">CSE</strong></div>
+                    <div><div class="detail-label">Semester</div><strong th:text="${student.semester ?: 'Not assigned'}">1</strong></div>
+                    <div><div class="detail-label">Student ID</div><strong th:text="${student.id}">1</strong></div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <section class="portal-intro p-4 p-lg-5 mb-4" th:unless="${section == 'dashboard'}">
+        <div class="detail-label mb-2">STUDENT PORTAL</div>
+        <h1 class="h2 fw-bold mb-0" th:switch="${section}">
+            <span th:case="'academics'">Academic Performance</span>
+            <span th:case="'attendance'">Attendance</span>
+            <span th:case="'assignments'">Assignments</span>
+            <span th:case="'materials'">Study Materials</span>
+            <span th:case="'events'">Campus Events</span>
+            <span th:case="'notices'">Notices</span>
+            <span th:case="'fees'">Fees</span>
+            <span th:case="'helpdesk'">Helpdesk</span>
+            <span th:case="'profile'">My Profile</span>
+        </h1>
+    </section>
+
+    <section th:if="${section == 'dashboard'}">
+        <div class="row g-3 mb-4">
+            <div class="col-6 col-xl-3">
+                <a class="card portal-card summary-card text-decoration-none" th:href="@{/student/attendance}">
+                    <div class="card-body d-flex justify-content-between align-items-center">
+                        <div><div class="detail-label">Attendance</div><div class="h3 fw-bold mb-1" th:text="${#numbers.formatDecimal(attendancePercentage, 1, 1) + '%'}">0%</div><small class="text-muted" th:text="${attendanceCount + ' recorded classes'}">0 classes</small></div>
+                        <span class="summary-icon"><i class="bi bi-calendar-check"></i></span>
+                    </div>
+                </a>
+            </div>
+            <div class="col-6 col-xl-3">
+                <a class="card portal-card summary-card text-decoration-none" th:href="@{/student/academics}">
+                    <div class="card-body d-flex justify-content-between align-items-center">
+                        <div><div class="detail-label">Academic performance</div><div class="h3 fw-bold mb-1" th:text="${averageMarks == null ? '—' : #numbers.formatDecimal(averageMarks, 1, 1)}">—</div><small class="text-muted" th:text="${markedSubmissionCount + ' graded submissions'}">0 graded submissions</small></div>
+                        <span class="summary-icon"><i class="bi bi-graph-up"></i></span>
+                    </div>
+                </a>
+            </div>
+            <div class="col-6 col-xl-3">
+                <a class="card portal-card summary-card text-decoration-none" th:href="@{/student/assignments}">
+                    <div class="card-body d-flex justify-content-between align-items-center">
+                        <div><div class="detail-label">Pending assignments</div><div class="h3 fw-bold mb-1" th:text="${pendingAssignmentCount}">0</div><small class="text-muted">Not yet submitted</small></div>
+                        <span class="summary-icon"><i class="bi bi-journal-text"></i></span>
+                    </div>
+                </a>
+            </div>
+            <div class="col-6 col-xl-3">
+                <a class="card portal-card summary-card text-decoration-none" th:href="@{/student/fees}">
+                    <div class="card-body d-flex justify-content-between align-items-center">
+                        <div><div class="detail-label">Fees pending</div><div class="h3 fw-bold mb-1" th:text="${'₹' + #numbers.formatDecimal(pendingFees, 1, 2)}">₹0.00</div><small class="text-muted" th:text="${'₹' + #numbers.formatDecimal(paidFees, 1, 2) + ' paid'}">₹0.00 paid</small></div>
+                        <span class="summary-icon"><i class="bi bi-wallet2"></i></span>
+                    </div>
+                </a>
+            </div>
         </div>
 
         <div class="row g-4">
-            <div class="col-lg-8">
-                <div class="card h-100">
+            <div class="col-lg-6">
+                <div class="card portal-card">
                     <div class="card-header d-flex justify-content-between align-items-center">
-                        <span class="fs-5"><i class="bi bi-grid text-primary me-2"></i> Student Portal</span>
+                        <h2 class="h5 mb-0">Upcoming events</h2><a th:href="@{/student/events}">All events</a>
                     </div>
-                    <div class="card-body p-4">
-                        <div class="row g-3">
-                            <div class="col-sm-4">
-                                <button class="btn btn-light w-100 btn-custom text-primary border"><i class="bi bi-journal-text"></i> Assignments</button>
+                    <div class="card-body">
+                        <div th:each="event : ${upcomingEvents}" class="py-2 border-bottom">
+                            <div class="d-flex justify-content-between gap-3">
+                                <strong th:text="${event.name}">Event</strong>
+                                <span class="text-muted text-nowrap" th:if="${event.eventDate}" th:text="${#temporals.format(event.eventDate, 'dd MMM yyyy, HH:mm')}">Date</span>
                             </div>
-                            <div class="col-sm-4">
-                                <button class="btn btn-light w-100 btn-custom text-success border"><i class="bi bi-calendar-check"></i> Attendance</button>
-                            </div>
-                            <div class="col-sm-4">
-                                <button class="btn btn-light w-100 btn-custom text-info border"><i class="bi bi-folder2-open"></i> Materials</button>
-                            </div>
-                            <div class="col-sm-4">
-                                <button class="btn btn-light w-100 btn-custom text-warning border"><i class="bi bi-calendar-event"></i> Events</button>
-                            </div>
-                            <div class="col-sm-4">
-                                <button class="btn btn-light w-100 btn-custom text-danger border"><i class="bi bi-exclamation-triangle"></i> Helpdesk</button>
-                            </div>
+                            <p class="text-muted mb-1" th:text="${event.location ?: 'Location not provided'}">Location</p>
                         </div>
+                        <div class="empty-state p-3 text-center" th:if="${#lists.isEmpty(upcomingEvents)}">No upcoming events are listed.</div>
                     </div>
                 </div>
             </div>
-            <div class="col-lg-4">
-                <div class="card h-100 border-0 shadow-sm">
-                    <div class="card-header bg-white border-0 pt-4 pb-2">
-                        <h5 class="fw-bold m-0"><i class="bi bi-bell-fill text-warning me-2"></i> Recent Notices</h5>
+            <div class="col-lg-6">
+                <div class="card portal-card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h2 class="h5 mb-0">Recent notices</h2><a th:href="@{/student/notices}">All notices</a>
                     </div>
-                    <div class="card-body p-0">
-                        <ul class="list-group list-group-flush">
-                            <li class="list-group-item" th:each="notice : ${notices}">
-                                <div class="d-flex justify-content-between mb-1">
-                                    <strong class="text-dark" th:text="${notice.title}">Notice Title</strong>
-                                    <small class="text-muted" th:text="${#temporals.format(notice.publishDate, 'dd MMM')}">01 Jan</small>
-                                </div>
-                                <p class="mb-0 text-muted small text-truncate" th:text="${notice.content}">Content</p>
-                            </li>
-                            <li class="list-group-item text-center text-muted py-4" th:if="${#lists.isEmpty(notices)}">
-                                <i class="bi bi-inbox fs-2 d-block mb-2"></i> No new notices.
-                            </li>
-                        </ul>
+                    <div class="card-body">
+                        <article th:each="notice : ${recentNotices}" class="py-2 border-bottom">
+                            <div class="d-flex justify-content-between gap-3">
+                                <strong th:text="${notice.title}">Notice</strong>
+                                <span class="text-muted text-nowrap" th:if="${notice.publishDate}" th:text="${#temporals.format(notice.publishDate, 'dd MMM yyyy')}">Date</span>
+                            </div>
+                            <p class="text-muted mb-0" th:text="${notice.content}">Content</p>
+                        </article>
+                        <div class="empty-state p-3 text-center" th:if="${#lists.isEmpty(recentNotices)}">No notices are available for your department.</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12">
+                <div class="card portal-card">
+                    <div class="card-header"><h2 class="h5 mb-0">Student services</h2></div>
+                    <div class="card-body d-flex flex-wrap gap-2">
+                        <a class="btn btn-outline-primary" th:href="@{/student/academics}"><i class="bi bi-graph-up me-1"></i>Academic performance</a>
+                        <a class="btn btn-outline-primary" th:href="@{/student/assignments}"><i class="bi bi-journal-text me-1"></i>Assignments</a>
+                        <a class="btn btn-outline-primary" th:href="@{/student/materials}"><i class="bi bi-folder2-open me-1"></i>Study materials</a>
+                        <a class="btn btn-outline-primary" th:href="@{/student/helpdesk}"><i class="bi bi-chat-square-text me-1"></i>Helpdesk</a>
+                        <a class="btn btn-outline-primary" th:href="@{/student/profile}"><i class="bi bi-person me-1"></i>Profile</a>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
+    </section>
+
+    <section th:if="${section == 'academics'}">
+        <div class="card portal-card mb-4">
+            <div class="card-body d-flex flex-wrap align-items-center justify-content-between gap-3">
+                <div>
+                    <div class="detail-label">Department / semester</div>
+                    <strong th:text="${student.department ?: 'Not assigned'}">Department</strong>
+                    <span class="text-muted"> / </span>
+                    <strong th:text="${student.semester ?: 'Not assigned'}">Semester</strong>
+                </div>
+                <div class="text-lg-end">
+                    <div class="detail-label">Average of available marks</div>
+                    <strong class="h4 mb-0" th:text="${gradedCount == 0 ? 'Not recorded' : #numbers.formatDecimal(overallAverage, 1, 1)}">Not recorded</strong>
+                </div>
+            </div>
+        </div>
+        <div class="row g-3">
+            <div class="col-12" th:each="item : ${performance}">
+                <article class="card portal-card">
+                    <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+                        <div><h2 class="h5 mb-1" th:text="${item.subjectName}">Subject</h2><span class="text-muted" th:text="${item.subjectCode ?: 'Code not recorded'}">Code</span></div>
+                        <span class="status-pill" th:text="${'Semester ' + (item.semester ?: 'not recorded')}">Semester</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3 mb-3">
+                            <div class="col-sm-4"><div class="detail-label">Attendance</div><strong th:text="${#numbers.formatDecimal(item.attendancePercentage, 1, 1) + '%'}">0%</strong> <span class="text-muted" th:text="${'(' + item.attendanceCount + ' classes)'}">(0 classes)</span></div>
+                            <div class="col-sm-4"><div class="detail-label">Average marks</div><strong th:text="${item.averageMarks == null ? 'Not recorded' : #numbers.formatDecimal(item.averageMarks, 1, 1)}">Not recorded</strong></div>
+                            <div class="col-sm-4"><div class="detail-label">Graded work</div><strong th:text="${#lists.size(item.grades)}">0</strong></div>
+                        </div>
+                        <div th:if="${!#lists.isEmpty(item.grades)}">
+                            <h3 class="h6">Recorded marks</h3>
+                            <ul class="mb-0">
+                                <li th:each="grade : ${item.grades}" th:text="${grade.assignmentTitle + ': ' + grade.marks}">Assignment: mark</li>
+                            </ul>
+                        </div>
+                        <p class="text-muted mb-0" th:if="${#lists.isEmpty(item.grades)}">No marks or grades have been recorded for this subject.</p>
+                    </div>
+                </article>
+            </div>
+            <div class="col-12" th:if="${#lists.isEmpty(performance)}">
+                <div class="empty-state p-4 text-center">No subjects are recorded for your department and semester.</div>
+            </div>
+        </div>
+    </section>
+
+    <section th:if="${section == 'attendance'}">
+        <div class="row g-3 mb-4">
+            <div class="col-sm-6"><div class="card portal-card"><div class="card-body"><div class="detail-label">Overall attendance</div><div class="h3 mb-0" th:text="${#numbers.formatDecimal(attendancePercentage, 1, 1) + '%'}">0%</div></div></div></div>
+            <div class="col-sm-6"><div class="card portal-card"><div class="card-body"><div class="detail-label">Recorded classes</div><div class="h3 mb-0" th:text="${attendanceCount}">0</div></div></div></div>
+        </div>
+        <div class="row g-3">
+            <div class="col-lg-6" th:each="subject : ${attendanceBySubject}">
+                <article class="card portal-card">
+                    <div class="card-header d-flex justify-content-between gap-2">
+                        <div><h2 class="h5 mb-1" th:text="${subject.subjectName}">Subject</h2><span class="text-muted" th:text="${subject.subjectCode ?: 'Code not recorded'}">Code</span></div>
+                        <strong th:text="${#numbers.formatDecimal(subject.percentage, 1, 1) + '%'}">0%</strong>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted" th:text="${subject.presentClasses + ' present out of ' + subject.totalClasses + ' recorded classes'}">0 classes</p>
+                        <details>
+                            <summary>Attendance records</summary>
+                            <ul class="mt-2 mb-0">
+                                <li th:each="record : ${subject.records}">
+                                    <span th:text="${record.date == null ? 'Date not recorded' : #temporals.format(record.date, 'dd MMM yyyy')}">Date</span>
+                                    <span class="status-pill ms-2" th:text="${record.status}">Status</span>
+                                </li>
+                            </ul>
+                        </details>
+                    </div>
+                </article>
+            </div>
+            <div class="col-12" th:if="${#lists.isEmpty(attendanceBySubject)}">
+                <div class="empty-state p-4 text-center">No attendance has been recorded for your account yet.</div>
+            </div>
+        </div>
+    </section>
+
+    <section th:if="${section == 'assignments'}">
+        <div class="row g-3">
+            <div class="col-12" th:each="item : ${assignments}">
+                <article class="card portal-card">
+                    <div class="card-header d-flex flex-wrap justify-content-between gap-2">
+                        <div><h2 class="h5 mb-1" th:text="${item.title}">Assignment</h2><span class="text-muted" th:text="${item.subjectName + (item.subjectCode == null ? '' : ' · ' + item.subjectCode)}">Subject</span></div>
+                        <span class="status-pill" th:text="${item.submission == null ? 'Not submitted' : 'Submitted'}">Status</span>
+                    </div>
+                    <div class="card-body">
+                        <p th:text="${item.description ?: 'No description provided.'}">Description</p>
+                        <div class="d-flex flex-wrap gap-3 mb-3">
+                            <span><span class="detail-label">Faculty: </span><span th:text="${item.facultyName ?: 'Not recorded'}">Faculty</span></span>
+                            <span><span class="detail-label">Assigned date: </span>Not recorded</span>
+                            <span><span class="detail-label">Due: </span><span th:text="${item.dueDate == null ? 'Not specified' : #temporals.format(item.dueDate, 'dd MMM yyyy, HH:mm')}">Due date</span></span>
+                        </div>
+                        <div th:if="${item.submission != null}" class="mb-3">
+                            <span class="detail-label">Submitted: </span>
+                            <span th:text="${item.submission.submissionDate == null ? 'Date not recorded' : #temporals.format(item.submission.submissionDate, 'dd MMM yyyy, HH:mm')}">Date</span>
+                            <a class="ms-2" th:if="${item.submission.fileUrl != null}" th:href="@{/student/submissions/{id}/download(id=${item.submission.id})}">Download my submission</a>
+                            <p class="mb-0 mt-1" th:if="${item.submission.marksAwarded != null}" th:text="${'Marks: ' + item.submission.marksAwarded}">Marks</p>
+                            <p class="text-muted mb-0 mt-1" th:if="${item.submission.facultyFeedback}" th:text="${'Faculty feedback: ' + item.submission.facultyFeedback}">Feedback</p>
+                        </div>
+                        <form th:if="${item.dueDate == null or !item.dueDate.isBefore(T(java.time.LocalDateTime).now())}"
+                              th:action="@{/student/assignments/{id}/submit(id=${item.id})}" method="post"
+                              enctype="multipart/form-data" class="border-top pt-3">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                            <label class="form-label" th:for="${'assignment-file-' + item.id}">Attach submission (optional)</label>
+                            <input class="form-control mb-2" type="file" name="file" th:id="${'assignment-file-' + item.id}"
+                                   accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.csv">
+                            <label class="form-label" th:for="${'assignment-comment-' + item.id}">Comments or submission text</label>
+                            <textarea class="form-control mb-2" name="studentComments" rows="2"
+                                      th:id="${'assignment-comment-' + item.id}" placeholder="Add a note about your submission"></textarea>
+                            <button class="btn btn-primary" type="submit" th:text="${item.submission == null ? 'Submit assignment' : 'Update submission'}">Submit</button>
+                        </form>
+                        <p class="text-muted mb-0" th:if="${item.dueDate != null and item.dueDate.isBefore(T(java.time.LocalDateTime).now()) and item.submission == null}">The deadline has passed.</p>
+                    </div>
+                </article>
+            </div>
+            <div class="col-12" th:if="${#lists.isEmpty(assignments)}">
+                <div class="empty-state p-4 text-center">No assignments are currently available for your subjects.</div>
+            </div>
+        </div>
+    </section>
+
+    <section th:if="${section == 'materials'}">
+        <div class="row g-3">
+            <div class="col-md-6" th:each="item : ${materials}">
+                <article class="card portal-card">
+                    <div class="card-body">
+                        <div class="detail-label mb-1" th:text="${item.subjectName + (item.subjectCode == null ? '' : ' · ' + item.subjectCode)}">Subject</div>
+                        <h2 class="h5" th:text="${item.title}">Study material</h2>
+                        <p class="text-muted" th:text="${item.description ?: 'No description provided.'}">Description</p>
+                        <div class="detail-label">Uploaded</div>
+                        <p th:text="${item.uploadDate == null ? 'Date not recorded' : #temporals.format(item.uploadDate, 'dd MMM yyyy')}">Date</p>
+                        <p class="mb-3"><span class="detail-label">Faculty: </span><span th:text="${item.facultyName ?: 'Not recorded'}">Faculty</span></p>
+                        <a class="btn btn-outline-primary" th:if="${item.fileUrl != null}" th:href="@{/student/materials/{id}/download(id=${item.id})}">
+                            <i class="bi bi-download me-1"></i>Download material
+                        </a>
+                        <span class="text-muted" th:if="${item.fileUrl == null}">No file is attached.</span>
+                    </div>
+                </article>
+            </div>
+            <div class="col-12" th:if="${#lists.isEmpty(materials)}">
+                <div class="empty-state p-4 text-center">No study materials are currently available for your subjects.</div>
+            </div>
+        </div>
+    </section>
+
+    <section th:if="${section == 'events'}">
+        <h2 class="h5 mb-3">Upcoming</h2>
+        <div class="row g-3 mb-4">
+            <div class="col-md-6" th:each="event : ${events}" th:if="${!event.past}">
+                <article class="card portal-card"><div class="card-body">
+                    <h3 class="h5" th:text="${event.name}">Event</h3>
+                    <p class="mb-2" th:text="${event.description ?: 'No description provided.'}">Description</p>
+                    <p class="mb-1"><span class="detail-label">Date: </span><span th:text="${event.eventDate == null ? 'Not recorded' : #temporals.format(event.eventDate, 'dd MMM yyyy, HH:mm')}">Date</span></p>
+                    <p class="mb-1"><span class="detail-label">Location: </span><span th:text="${event.location ?: 'Not provided'}">Location</span></p>
+                    <p class="mb-0"><span class="detail-label">Organizer: </span><span th:text="${event.organizer ?: 'Not recorded'}">Organizer</span></p>
+                </div></article>
+            </div>
+            <div class="col-12" th:if="${#lists.isEmpty(events.?[!past])}">
+                <div class="empty-state p-3 text-center">No upcoming events are listed.</div>
+            </div>
+        </div>
+        <h2 class="h5 mb-3">Past events</h2>
+        <div class="row g-3">
+            <div class="col-md-6" th:each="event : ${events}" th:if="${event.past}">
+                <article class="card portal-card"><div class="card-body">
+                    <h3 class="h5" th:text="${event.name}">Event</h3>
+                    <p class="mb-2" th:text="${event.description ?: 'No description provided.'}">Description</p>
+                    <p class="mb-1"><span class="detail-label">Date: </span><span th:text="${event.eventDate == null ? 'Not recorded' : #temporals.format(event.eventDate, 'dd MMM yyyy, HH:mm')}">Date</span></p>
+                    <p class="mb-0"><span class="detail-label">Location: </span><span th:text="${event.location ?: 'Not provided'}">Location</span></p>
+                </div></article>
+            </div>
+            <div class="col-12" th:if="${#lists.isEmpty(events.?[past])}">
+                <div class="empty-state p-3 text-center">No past events are listed.</div>
+            </div>
+        </div>
+    </section>
+
+    <section th:if="${section == 'notices'}">
+        <div class="card portal-card">
+            <div class="list-group list-group-flush">
+                <article class="list-group-item p-4" th:each="notice : ${notices}">
+                    <div class="d-flex flex-wrap justify-content-between gap-2">
+                        <h2 class="h5 mb-1" th:text="${notice.title}">Notice</h2>
+                        <span class="text-muted" th:text="${notice.publishDate == null ? 'Date not recorded' : #temporals.format(notice.publishDate, 'dd MMM yyyy')}">Date</span>
+                    </div>
+                    <span class="status-pill" th:text="${notice.departmentName}">Department</span>
+                    <p class="mb-0 mt-2" th:text="${notice.content}">Content</p>
+                </article>
+            </div>
+            <div class="card-body empty-state text-center" th:if="${#lists.isEmpty(notices)}">No notices are available for your department.</div>
+        </div>
+    </section>
+
+    <section th:if="${section == 'fees'}">
+        <div class="row g-3 mb-4">
+            <div class="col-md-4"><div class="card portal-card"><div class="card-body"><div class="detail-label">Total fees</div><strong class="h4" th:text="${'₹' + #numbers.formatDecimal(totalFees, 1, 2)}">₹0.00</strong></div></div></div>
+            <div class="col-md-4"><div class="card portal-card"><div class="card-body"><div class="detail-label">Paid</div><strong class="h4" th:text="${'₹' + #numbers.formatDecimal(paidFees, 1, 2)}">₹0.00</strong></div></div></div>
+            <div class="col-md-4"><div class="card portal-card"><div class="card-body"><div class="detail-label">Pending</div><strong class="h4" th:text="${'₹' + #numbers.formatDecimal(pendingFees, 1, 2)}">₹0.00</strong></div></div></div>
+        </div>
+        <div class="card portal-card">
+            <div class="table-responsive">
+                <table class="table student-table mb-0">
+                    <thead><tr><th>Academic year</th><th>Semester</th><th>Total</th><th>Paid</th><th>Pending</th><th>Status</th><th>Due date</th></tr></thead>
+                    <tbody>
+                    <tr th:each="fee : ${fees}">
+                        <td th:text="${fee.academicYear}">Year</td><td th:text="${fee.semester}">1</td>
+                        <td th:text="${'₹' + #numbers.formatDecimal(fee.totalAmount, 1, 2)}">₹0</td>
+                        <td th:text="${'₹' + #numbers.formatDecimal(fee.paidAmount, 1, 2)}">₹0</td>
+                        <td th:text="${'₹' + #numbers.formatDecimal(fee.pendingAmount, 1, 2)}">₹0</td>
+                        <td><span class="status-pill" th:text="${fee.paymentStatus}">PENDING</span></td>
+                        <td th:text="${fee.dueDate == null ? 'Not recorded' : #temporals.format(fee.dueDate, 'dd MMM yyyy')}">Date</td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(fees)}"><td colspan="7" class="text-center text-muted py-4">No fee records are available for your account.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <section th:if="${section == 'helpdesk'}">
+        <div class="row g-4">
+            <div class="col-lg-5">
+                <div class="card portal-card">
+                    <div class="card-header"><h2 class="h5 mb-0">Submit a helpdesk request</h2></div>
+                    <div class="card-body">
+                        <form th:action="@{/student/helpdesk}" method="post">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                            <label class="form-label" for="complaint-title">Title</label>
+                            <input class="form-control mb-3" id="complaint-title" name="title" maxlength="200" required>
+                            <label class="form-label" for="complaint-description">Describe the issue</label>
+                            <textarea class="form-control mb-3" id="complaint-description" name="description" rows="5" required></textarea>
+                            <button class="btn btn-primary" type="submit">Send request</button>
+                        </form>
+                        <p class="text-muted small mt-3 mb-0">Your request is linked to your account so you can track its status.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-7">
+                <div class="card portal-card">
+                    <div class="card-header"><h2 class="h5 mb-0">My requests</h2></div>
+                    <div class="list-group list-group-flush">
+                        <article class="list-group-item p-3" th:each="complaint : ${complaints}">
+                            <div class="d-flex justify-content-between gap-2">
+                                <h3 class="h6 mb-1" th:text="${complaint.title}">Request</h3>
+                                <span class="status-pill" th:text="${complaint.status}">OPEN</span>
+                            </div>
+                            <p class="mb-2" th:text="${complaint.description}">Description</p>
+                            <small class="text-muted" th:text="${complaint.createdAt == null ? 'Date not recorded' : #temporals.format(complaint.createdAt, 'dd MMM yyyy, HH:mm')}">Date</small>
+                        </article>
+                    </div>
+                    <div class="card-body empty-state text-center" th:if="${#lists.isEmpty(complaints)}">You have not submitted any helpdesk requests.</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section th:if="${section == 'profile'}">
+        <div class="card portal-card">
+            <div class="card-header"><h2 class="h5 mb-0">My student details</h2></div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4 detail-label">Name</dt><dd class="col-sm-8" th:text="${student.name}">Name</dd>
+                    <dt class="col-sm-4 detail-label">Email</dt><dd class="col-sm-8" th:text="${student.email}">email</dd>
+                    <dt class="col-sm-4 detail-label">Student ID / roll number</dt><dd class="col-sm-8" th:text="${student.id}">ID</dd>
+                    <dt class="col-sm-4 detail-label">Department</dt><dd class="col-sm-8" th:text="${student.department ?: 'Not assigned'}">Department</dd>
+                    <dt class="col-sm-4 detail-label">Semester</dt><dd class="col-sm-8" th:text="${student.semester ?: 'Not assigned'}">Semester</dd>
+                </dl>
+                <p class="text-muted small mb-0">Profile editing is not currently available.</p>
+            </div>
+        </div>
+    </section>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

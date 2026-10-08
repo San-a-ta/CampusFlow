@@ -3,13 +3,21 @@ package com.campusflow.controller;
 import com.campusflow.entity.Assignment;
 import com.campusflow.entity.Attendance;
 import com.campusflow.entity.AttendanceStatus;
+import com.campusflow.entity.Complaint;
+import com.campusflow.entity.ComplaintStatus;
+import com.campusflow.entity.Department;
 import com.campusflow.entity.Event;
 import com.campusflow.entity.Fee;
 import com.campusflow.entity.FeePaymentStatus;
 import com.campusflow.entity.Role;
 import com.campusflow.entity.StudyMaterial;
 import com.campusflow.entity.Subject;
+import com.campusflow.entity.Submission;
 import com.campusflow.entity.User;
+import com.campusflow.dto.AdminViewModels.ComplaintSummary;
+import com.campusflow.dto.AdminViewModels.DepartmentFees;
+import com.campusflow.dto.AdminViewModels.DepartmentStudents;
+import com.campusflow.dto.AdminViewModels.StudentSubjectPerformance;
 import com.campusflow.repository.AssignmentRepository;
 import com.campusflow.repository.AttendanceRepository;
 import com.campusflow.repository.ComplaintRepository;
@@ -19,10 +27,13 @@ import com.campusflow.repository.FeeRepository;
 import com.campusflow.repository.NoticeRepository;
 import com.campusflow.repository.StudyMaterialRepository;
 import com.campusflow.repository.SubjectRepository;
+import com.campusflow.repository.SubmissionRepository;
 import com.campusflow.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataAccessException;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.ContentDisposition;
@@ -44,6 +55,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.nio.file.Files;
@@ -54,7 +66,12 @@ import java.time.format.DateTimeParseException;
 import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/admin")
@@ -71,6 +88,8 @@ public class AdminController {
     private final AssignmentRepository assignmentRepository;
     private final StudyMaterialRepository studyMaterialRepository;
     private final FeeRepository feeRepository;
+    private final SubmissionRepository submissionRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Value("${campusflow.upload.directory:uploads}")
     private String uploadDirectory;
@@ -89,34 +108,444 @@ public class AdminController {
     }
 
     @GetMapping("/students")
-    public String students(Authentication authentication, Model model) {
+    public String students(
+            Authentication authentication,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) Long departmentId,
+            Model model) {
         User user = userRepository.findByEmail(authentication.getName()).orElseThrow();
+        List<User> studentList = userRepository.findByRole(Role.STUDENT);
+        if (search != null && !search.isBlank()) {
+            String query = search.trim().toLowerCase(Locale.ROOT);
+            studentList = studentList.stream()
+                    .filter(student -> ((student.getFirstName() == null ? "" : student.getFirstName())
+                            + " " + (student.getLastName() == null ? "" : student.getLastName()))
+                            .toLowerCase(Locale.ROOT).contains(query)
+                            || student.getEmail().toLowerCase(Locale.ROOT).contains(query))
+                    .toList();
+        }
+        if (departmentId != null) {
+            studentList = studentList.stream()
+                    .filter(student -> student.getDepartment() != null
+                            && departmentId.equals(student.getDepartment().getId()))
+                    .toList();
+        }
         model.addAttribute("user", user);
-        model.addAttribute("students", userRepository.findByRole(com.campusflow.entity.Role.STUDENT));
+        model.addAttribute("students", studentList);
+        model.addAttribute("departmentGroups", groupStudentsByDepartment(studentList));
+        model.addAttribute("departments", departmentRepository.findAll());
+        model.addAttribute("search", search);
+        model.addAttribute("selectedDepartmentId", departmentId);
         return "admin/students";
     }
 
+    @GetMapping("/students/{id}")
+    public String studentAcademicRecord(
+            Authentication authentication,
+            @PathVariable Long id,
+            Model model) {
+        User admin = userRepository.findByEmail(authentication.getName()).orElseThrow();
+        User student = userRepository.findById(id)
+                .filter(user -> user.getRole() == Role.STUDENT)
+                .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(
+                        org.springframework.http.HttpStatus.NOT_FOUND, "Student not found."));
+        List<Attendance> attendance = attendanceRepository.findByStudentId(student.getId());
+        List<Submission> submissions = submissionRepository.findByStudentId(student.getId());
+        List<Subject> studentSubjects = subjectRepository.findAll().stream()
+                .filter(subject -> student.getDepartment() != null && subject.getDepartment() != null
+                        && student.getDepartment().getId().equals(subject.getDepartment().getId()))
+                .filter(subject -> student.getCurrentSemester() == null || subject.getSemester() == null
+                        || student.getCurrentSemester().equals(subject.getSemester()))
+                .sorted(Comparator.comparing(Subject::getName, Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)))
+                .toList();
+        List<StudentSubjectPerformance> subjectPerformance = studentSubjects.stream()
+                .map(subject -> {
+                    List<Attendance> subjectAttendance = attendance.stream()
+                            .filter(record -> record.getSubject().getId().equals(subject.getId()))
+                            .toList();
+                    List<Submission> subjectSubmissions = submissions.stream()
+                            .filter(submission -> submission.getAssignment() != null
+                                    && submission.getAssignment().getSubject() != null
+                                    && submission.getAssignment().getSubject().getId().equals(subject.getId()))
+                            .toList();
+                    long present = subjectAttendance.stream()
+                            .filter(record -> record.getStatus() == AttendanceStatus.PRESENT).count();
+                    double percentage = subjectAttendance.isEmpty() ? 0 : present * 100.0 / subjectAttendance.size();
+                    return new StudentSubjectPerformance(
+                            subject, subjectSubmissions, subjectAttendance.size(), present, percentage);
+                })
+                .toList();
+        long presentCount = attendance.stream()
+                .filter(record -> record.getStatus() == AttendanceStatus.PRESENT).count();
+        model.addAttribute("user", admin);
+        model.addAttribute("student", student);
+        model.addAttribute("subjectPerformance", subjectPerformance);
+        model.addAttribute("attendanceCount", attendance.size());
+        model.addAttribute("presentCount", presentCount);
+        model.addAttribute("attendancePercentage",
+                attendance.isEmpty() ? 0 : presentCount * 100.0 / attendance.size());
+        model.addAttribute("markedSubmissionCount", submissions.stream()
+                .filter(submission -> submission.getMarksAwarded() != null).count());
+        return "admin/student-performance";
+    }
+
+    @PostMapping("/students/save")
+    public String saveStudent(
+            @RequestParam(required = false) Long id,
+            @RequestParam(required = false) String firstName,
+            @RequestParam(required = false) String lastName,
+            @RequestParam(required = false) String email,
+            @RequestParam(required = false) String password,
+            @RequestParam(required = false) Long departmentId,
+            @RequestParam(required = false) String currentSemester,
+            RedirectAttributes redirectAttributes) {
+        if (firstName == null || firstName.isBlank() || firstName.trim().length() > 100
+                || lastName == null || lastName.isBlank() || lastName.trim().length() > 100) {
+            redirectAttributes.addFlashAttribute("error", "Enter the student's first and last names (up to 100 characters each).");
+            return "redirect:/admin/students";
+        }
+        if (email == null || email.isBlank() || email.trim().length() > 255
+                || !email.trim().matches("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$")) {
+            redirectAttributes.addFlashAttribute("error", "Enter a valid email address.");
+            return "redirect:/admin/students";
+        }
+
+        User student = id == null ? new User() : userRepository.findById(id).orElse(null);
+        if (student == null || (id != null && student.getRole() != Role.STUDENT)) {
+            redirectAttributes.addFlashAttribute("error", "Student record not found.");
+            return "redirect:/admin/students";
+        }
+        String normalizedEmail = email.trim().toLowerCase(Locale.ROOT);
+        User emailOwner = userRepository.findByEmail(normalizedEmail).orElse(null);
+        if (emailOwner != null && (id == null || !emailOwner.getId().equals(id))) {
+            redirectAttributes.addFlashAttribute("error", "An account with that email address already exists.");
+            return "redirect:/admin/students";
+        }
+        if (id == null && (password == null || password.length() < 8
+                || password.getBytes(StandardCharsets.UTF_8).length > 72)) {
+            redirectAttributes.addFlashAttribute("error", "A password of 8 to 72 characters is required for a new student.");
+            return "redirect:/admin/students";
+        }
+        Department department = departmentId == null ? null : departmentRepository.findById(departmentId).orElse(null);
+        if (department == null) {
+            redirectAttributes.addFlashAttribute("error", "Select a valid department.");
+            return "redirect:/admin/students";
+        }
+
+        Integer parsedSemester = null;
+        if (currentSemester != null && !currentSemester.isBlank()) {
+            try {
+                parsedSemester = Integer.valueOf(currentSemester);
+            } catch (NumberFormatException ex) {
+                redirectAttributes.addFlashAttribute("error", "Semester must be a number from 1 to 12.");
+                return "redirect:/admin/students";
+            }
+            if (parsedSemester < 1 || parsedSemester > 12) {
+                redirectAttributes.addFlashAttribute("error", "Semester must be from 1 to 12.");
+                return "redirect:/admin/students";
+            }
+        } else {
+            redirectAttributes.addFlashAttribute("error", "Select the student's current semester.");
+            return "redirect:/admin/students";
+        }
+
+        student.setFirstName(firstName.trim());
+        student.setLastName(lastName.trim());
+        student.setEmail(normalizedEmail);
+        student.setRole(Role.STUDENT);
+        student.setDepartment(department);
+        student.setCurrentSemester(parsedSemester);
+        if (id == null) {
+            student.setPassword(passwordEncoder.encode(password));
+        }
+        try {
+            userRepository.saveAndFlush(student);
+        } catch (DataIntegrityViolationException ex) {
+            redirectAttributes.addFlashAttribute("error", "Student could not be saved because the email address is already in use.");
+            return "redirect:/admin/students";
+        } catch (DataAccessException ex) {
+            redirectAttributes.addFlashAttribute("error", "Student could not be saved because of a database error. Please try again.");
+            return "redirect:/admin/students";
+        }
+        redirectAttributes.addFlashAttribute("success", id == null
+                ? "Student added successfully."
+                : "Student updated successfully.");
+        return "redirect:/admin/students";
+    }
+
+    @PostMapping("/students/delete")
+    public String deleteStudent(@RequestParam(required = false) Long id, RedirectAttributes redirectAttributes) {
+        User student = id == null ? null : userRepository.findById(id).orElse(null);
+        if (student == null || student.getRole() != Role.STUDENT) {
+            redirectAttributes.addFlashAttribute("error", "Student record not found.");
+            return "redirect:/admin/students";
+        }
+        try {
+            userRepository.delete(student);
+            userRepository.flush();
+        } catch (DataIntegrityViolationException ex) {
+            redirectAttributes.addFlashAttribute("error", "This student has related records and cannot be deleted.");
+            return "redirect:/admin/students";
+        } catch (DataAccessException ex) {
+            redirectAttributes.addFlashAttribute("error", "Student could not be deleted because of a database error. Please try again.");
+            return "redirect:/admin/students";
+        }
+        redirectAttributes.addFlashAttribute("success", "Student deleted successfully.");
+        return "redirect:/admin/students";
+    }
+
     @GetMapping("/faculty")
-    public String faculty(Authentication authentication, Model model) {
+    public String faculty(
+            Authentication authentication,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) Long departmentId,
+            Model model) {
         User user = userRepository.findByEmail(authentication.getName()).orElseThrow();
+        List<User> facultyList = userRepository.findByRole(Role.FACULTY);
+        if (search != null && !search.isBlank()) {
+            String query = search.trim().toLowerCase(Locale.ROOT);
+            facultyList = facultyList.stream()
+                    .filter(faculty -> ((faculty.getFirstName() == null ? "" : faculty.getFirstName())
+                            + " " + (faculty.getLastName() == null ? "" : faculty.getLastName()))
+                            .toLowerCase(Locale.ROOT).contains(query)
+                            || faculty.getEmail().toLowerCase(Locale.ROOT).contains(query))
+                    .toList();
+        }
+        if (departmentId != null) {
+            facultyList = facultyList.stream()
+                    .filter(faculty -> faculty.getDepartment() != null
+                            && departmentId.equals(faculty.getDepartment().getId()))
+                    .toList();
+        }
         model.addAttribute("user", user);
-        model.addAttribute("facultyList", userRepository.findByRole(com.campusflow.entity.Role.FACULTY));
+        model.addAttribute("facultyList", facultyList);
+        model.addAttribute("facultyCount", userRepository.findByRole(Role.FACULTY).size());
+        model.addAttribute("departments", departmentRepository.findAll());
+        model.addAttribute("search", search);
+        model.addAttribute("selectedDepartmentId", departmentId);
         return "admin/faculty";
     }
 
+    @PostMapping("/faculty/save")
+    public String saveFaculty(
+            @RequestParam(required = false) Long id,
+            @RequestParam(required = false) String firstName,
+            @RequestParam(required = false) String lastName,
+            @RequestParam(required = false) String email,
+            @RequestParam(required = false) String password,
+            @RequestParam(required = false) Long departmentId,
+            RedirectAttributes redirectAttributes) {
+        if (firstName == null || firstName.isBlank() || firstName.trim().length() > 100
+                || lastName == null || lastName.isBlank() || lastName.trim().length() > 100) {
+            redirectAttributes.addFlashAttribute("error", "Enter the faculty member's first and last names (up to 100 characters each).");
+            return "redirect:/admin/faculty";
+        }
+        if (email == null || email.isBlank() || email.trim().length() > 255
+                || !email.trim().matches("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$")) {
+            redirectAttributes.addFlashAttribute("error", "Enter a valid email address.");
+            return "redirect:/admin/faculty";
+        }
+
+        User faculty = id == null ? new User() : userRepository.findById(id).orElse(null);
+        if (faculty == null || (id != null && faculty.getRole() != Role.FACULTY)) {
+            redirectAttributes.addFlashAttribute("error", "Faculty record not found.");
+            return "redirect:/admin/faculty";
+        }
+        String normalizedEmail = email.trim().toLowerCase(Locale.ROOT);
+        User emailOwner = userRepository.findByEmail(normalizedEmail).orElse(null);
+        if (emailOwner != null && (id == null || !emailOwner.getId().equals(id))) {
+            redirectAttributes.addFlashAttribute("error", "An account with that email address already exists.");
+            return "redirect:/admin/faculty";
+        }
+        if (id == null && (password == null || password.length() < 8
+                || password.getBytes(StandardCharsets.UTF_8).length > 72)) {
+            redirectAttributes.addFlashAttribute("error", "A password of 8 to 72 characters is required for a new faculty account.");
+            return "redirect:/admin/faculty";
+        }
+        Department department = departmentId == null ? null
+                : departmentRepository.findById(departmentId).orElse(null);
+        if (departmentId != null && department == null) {
+            redirectAttributes.addFlashAttribute("error", "Select a valid department.");
+            return "redirect:/admin/faculty";
+        }
+
+        faculty.setFirstName(firstName.trim());
+        faculty.setLastName(lastName.trim());
+        faculty.setEmail(normalizedEmail);
+        faculty.setRole(Role.FACULTY);
+        faculty.setDepartment(department);
+        faculty.setCurrentSemester(null);
+        if (id == null) {
+            faculty.setPassword(passwordEncoder.encode(password));
+        }
+        try {
+            userRepository.saveAndFlush(faculty);
+        } catch (DataIntegrityViolationException ex) {
+            redirectAttributes.addFlashAttribute("error", "Faculty member could not be saved because the email address is already in use.");
+            return "redirect:/admin/faculty";
+        } catch (DataAccessException ex) {
+            redirectAttributes.addFlashAttribute("error", "Faculty member could not be saved because of a database error. Please try again.");
+            return "redirect:/admin/faculty";
+        }
+        redirectAttributes.addFlashAttribute("success", id == null
+                ? "Faculty member added successfully."
+                : "Faculty member updated successfully.");
+        return "redirect:/admin/faculty";
+    }
+
+    @PostMapping("/faculty/delete")
+    public String deleteFaculty(
+            @RequestParam(required = false) Long id,
+            RedirectAttributes redirectAttributes) {
+        User faculty = id == null ? null : userRepository.findById(id).orElse(null);
+        if (faculty == null || faculty.getRole() != Role.FACULTY) {
+            redirectAttributes.addFlashAttribute("error", "Faculty record not found.");
+            return "redirect:/admin/faculty";
+        }
+        try {
+            userRepository.delete(faculty);
+            userRepository.flush();
+        } catch (DataIntegrityViolationException ex) {
+            redirectAttributes.addFlashAttribute("error", "This faculty member has related records and cannot be deleted.");
+            return "redirect:/admin/faculty";
+        } catch (DataAccessException ex) {
+            redirectAttributes.addFlashAttribute("error", "Faculty member could not be deleted because of a database error. Please try again.");
+            return "redirect:/admin/faculty";
+        }
+        redirectAttributes.addFlashAttribute("success", "Faculty member deleted successfully.");
+        return "redirect:/admin/faculty";
+    }
+
     @GetMapping("/departments")
-    public String departments(Authentication authentication, Model model) {
+    public String departments(
+            Authentication authentication,
+            @RequestParam(required = false) String search,
+            Model model) {
         User user = userRepository.findByEmail(authentication.getName()).orElseThrow();
+        List<Department> departments = departmentRepository.findAll();
+        if (search != null && !search.isBlank()) {
+            String query = search.trim().toLowerCase(Locale.ROOT);
+            departments = departments.stream()
+                    .filter(department -> department.getName().toLowerCase(Locale.ROOT).contains(query)
+                            || (department.getCode() != null
+                            && department.getCode().toLowerCase(Locale.ROOT).contains(query)))
+                    .toList();
+        }
         model.addAttribute("user", user);
-        model.addAttribute("departments", departmentRepository.findAll());
+        model.addAttribute("departments", departments);
+        model.addAttribute("departmentOptions", departmentRepository.findAll());
+        model.addAttribute("departmentCount", departmentRepository.count());
+        model.addAttribute("search", search);
         return "admin/departments";
+    }
+
+    @PostMapping("/departments/save")
+    public String saveDepartment(
+            @RequestParam(required = false) Long id,
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String code,
+            RedirectAttributes redirectAttributes) {
+        if (name == null || name.isBlank() || name.trim().length() > 255
+                || code == null || code.isBlank() || code.trim().length() > 50
+                || !code.trim().matches("[A-Za-z0-9_-]+")) {
+            redirectAttributes.addFlashAttribute("error", "Enter a department name and a valid code (letters, numbers, hyphens, or underscores).");
+            return "redirect:/admin/departments";
+        }
+        Department department = id == null ? new Department() : departmentRepository.findById(id).orElse(null);
+        if (department == null) {
+            redirectAttributes.addFlashAttribute("error", "Department not found.");
+            return "redirect:/admin/departments";
+        }
+        String normalizedName = name.trim();
+        String normalizedCode = code.trim().toUpperCase(Locale.ROOT);
+        boolean duplicateName = departmentRepository.existsByNameIgnoreCase(normalizedName);
+        boolean duplicateCode = departmentRepository.existsByCodeIgnoreCase(normalizedCode);
+        if ((duplicateName && (id == null || !normalizedName.equalsIgnoreCase(department.getName())))
+                || (duplicateCode && (id == null || department.getCode() == null
+                || !normalizedCode.equalsIgnoreCase(department.getCode())))) {
+            redirectAttributes.addFlashAttribute("error", "A department with that name or code already exists.");
+            return "redirect:/admin/departments";
+        }
+        department.setName(normalizedName);
+        department.setCode(normalizedCode);
+        try {
+            departmentRepository.saveAndFlush(department);
+        } catch (DataIntegrityViolationException ex) {
+            redirectAttributes.addFlashAttribute("error", "Department could not be saved because its name is already in use.");
+            return "redirect:/admin/departments";
+        } catch (DataAccessException ex) {
+            redirectAttributes.addFlashAttribute("error", "Department could not be saved because of a database error. Please try again.");
+            return "redirect:/admin/departments";
+        }
+        redirectAttributes.addFlashAttribute("success", id == null
+                ? "Department added successfully."
+                : "Department updated successfully.");
+        return "redirect:/admin/departments";
+    }
+
+    @PostMapping("/departments/delete")
+    public String deleteDepartment(@RequestParam(required = false) Long id, RedirectAttributes redirectAttributes) {
+        if (id == null || !departmentRepository.existsById(id)) {
+            redirectAttributes.addFlashAttribute("error", "Department not found.");
+            return "redirect:/admin/departments";
+        }
+        try {
+            departmentRepository.deleteById(id);
+            departmentRepository.flush();
+        } catch (DataIntegrityViolationException ex) {
+            redirectAttributes.addFlashAttribute("error", "This department is assigned to users or other records and cannot be deleted.");
+            return "redirect:/admin/departments";
+        } catch (DataAccessException ex) {
+            redirectAttributes.addFlashAttribute("error", "Department could not be deleted because of a database error. Please try again.");
+            return "redirect:/admin/departments";
+        }
+        redirectAttributes.addFlashAttribute("success", "Department deleted successfully.");
+        return "redirect:/admin/departments";
     }
     @GetMapping("/complaints")
     public String complaints(Authentication authentication, Model model) {
         User user = userRepository.findByEmail(authentication.getName()).orElseThrow();
         model.addAttribute("user", user);
-        model.addAttribute("complaints", complaintRepository.findAll());
+        model.addAttribute("complaintStatuses", com.campusflow.entity.ComplaintStatus.values());
+        model.addAttribute("complaints", complaintRepository.findAll().stream()
+                .sorted(Comparator.comparing(
+                        com.campusflow.entity.Complaint::getCreatedAt,
+                        Comparator.nullsLast(Comparator.reverseOrder())))
+                .map(complaint -> new ComplaintSummary(
+                        complaint.getId(),
+                        complaint.getTitle(),
+                        complaint.getDescription(),
+                        complaint.getStatus() == null ? "UNKNOWN" : complaint.getStatus().name(),
+                        complaint.getCreatedAt(),
+                        complaint.getUpdatedAt()))
+                .toList());
         return "admin/complaints";
+    }
+
+    @PostMapping("/complaints/{id}/status")
+    public String updateComplaintStatus(
+            @PathVariable Long id,
+            @RequestParam String status,
+            RedirectAttributes redirectAttributes) {
+        Complaint complaint = complaintRepository.findById(id).orElse(null);
+        if (complaint == null) {
+            redirectAttributes.addFlashAttribute("error", "Complaint not found.");
+            return "redirect:/admin/complaints";
+        }
+
+        ComplaintStatus updatedStatus;
+        try {
+            updatedStatus = ComplaintStatus.valueOf(status);
+        } catch (IllegalArgumentException | NullPointerException ex) {
+            redirectAttributes.addFlashAttribute("error", "Select a valid complaint status.");
+            return "redirect:/admin/complaints";
+        }
+
+        complaint.setStatus(updatedStatus);
+        complaint.setUpdatedAt(LocalDateTime.now());
+        complaintRepository.save(complaint);
+        redirectAttributes.addFlashAttribute("success", "Complaint status updated.");
+        return "redirect:/admin/complaints";
     }
 
     @GetMapping("/notices")
@@ -189,82 +618,78 @@ public class AdminController {
     }
 
     @GetMapping("/attendance")
-    public String attendance(Authentication authentication, Model model) {
+    public String attendance(
+            Authentication authentication,
+            @RequestParam(required = false) Long subjectId,
+            @RequestParam(required = false) Long studentId,
+            @RequestParam(required = false) Long departmentId,
+            @RequestParam(required = false) Integer semester,
+            Model model) {
         User user = userRepository.findByEmail(authentication.getName()).orElseThrow();
-        List<Attendance> attendanceList = attendanceRepository.findAllByOrderByDateDesc();
-        List<User> students = userRepository.findByRole(com.campusflow.entity.Role.STUDENT);
-        List<Subject> subjects = subjectRepository.findAll();
-        long presentCount = attendanceList.stream().filter(record -> record.getStatus() == AttendanceStatus.PRESENT).count();
-        long absentCount = attendanceList.stream().filter(record -> record.getStatus() == AttendanceStatus.ABSENT).count();
+        List<Attendance> allAttendanceList = attendanceRepository.findAllByOrderByDateDesc();
+        List<Attendance> attendanceList = allAttendanceList.stream()
+                .filter(record -> subjectId == null || subjectId.equals(record.getSubject().getId()))
+                .filter(record -> studentId == null || studentId.equals(record.getStudent().getId()))
+                .filter(record -> departmentId == null || record.getStudent().getDepartment() != null
+                        && departmentId.equals(record.getStudent().getDepartment().getId()))
+                .filter(record -> semester == null || semester.equals(record.getStudent().getCurrentSemester()))
+                .toList();
+        List<User> students = userRepository.findByRole(Role.STUDENT).stream()
+                .filter(student -> departmentId == null || student.getDepartment() != null
+                        && departmentId.equals(student.getDepartment().getId()))
+                .filter(student -> semester == null || semester.equals(student.getCurrentSemester()))
+                .toList();
+        List<Subject> subjects = subjectRepository.findAll().stream()
+                .filter(subject -> departmentId == null || subject.getDepartment() != null
+                        && departmentId.equals(subject.getDepartment().getId()))
+                .filter(subject -> semester == null || semester.equals(subject.getSemester()))
+                .toList();
+        long presentCount = allAttendanceList.stream().filter(record -> record.getStatus() == AttendanceStatus.PRESENT).count();
+        long absentCount = allAttendanceList.stream().filter(record -> record.getStatus() == AttendanceStatus.ABSENT).count();
+        long lateCount = allAttendanceList.stream().filter(record -> record.getStatus() == AttendanceStatus.LATE).count();
+        long excusedCount = allAttendanceList.stream().filter(record -> record.getStatus() == AttendanceStatus.EXCUSED).count();
+        double attendancePercentage = allAttendanceList.isEmpty() ? 0
+                : presentCount * 100.0 / allAttendanceList.size();
+        long filteredPresentCount = attendanceList.stream().filter(record -> record.getStatus() == AttendanceStatus.PRESENT).count();
+        long filteredAbsentCount = attendanceList.stream().filter(record -> record.getStatus() == AttendanceStatus.ABSENT).count();
+        long filteredLateCount = attendanceList.stream().filter(record -> record.getStatus() == AttendanceStatus.LATE).count();
+        long filteredExcusedCount = attendanceList.stream().filter(record -> record.getStatus() == AttendanceStatus.EXCUSED).count();
+        Map<Long, Double> studentAttendancePercentages = attendanceList.stream()
+                .collect(Collectors.groupingBy(record -> record.getStudent().getId()))
+                .entrySet().stream()
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        entry -> entry.getValue().isEmpty() ? 0.0
+                                : entry.getValue().stream()
+                                .filter(record -> record.getStatus() == AttendanceStatus.PRESENT).count()
+                                * 100.0 / entry.getValue().size()));
+        double filteredAttendancePercentage = attendanceList.isEmpty() ? 0
+                : filteredPresentCount * 100.0 / attendanceList.size();
 
         model.addAttribute("user", user);
         model.addAttribute("attendanceList", attendanceList);
         model.addAttribute("students", students);
         model.addAttribute("subjects", subjects);
-        model.addAttribute("statuses", AttendanceStatus.values());
+        model.addAttribute("departments", departmentRepository.findAll());
+        model.addAttribute("semesters", java.util.stream.IntStream.rangeClosed(1, 12).boxed().toList());
+        model.addAttribute("totalAttendanceCount", allAttendanceList.size());
         model.addAttribute("presentCount", presentCount);
         model.addAttribute("absentCount", absentCount);
+        model.addAttribute("lateCount", lateCount);
+        model.addAttribute("excusedCount", excusedCount);
+        model.addAttribute("attendancePercentage", attendancePercentage);
+        model.addAttribute("filteredAttendanceCount", attendanceList.size());
+        model.addAttribute("filteredPresentCount", filteredPresentCount);
+        model.addAttribute("filteredAbsentCount", filteredAbsentCount);
+        model.addAttribute("filteredLateCount", filteredLateCount);
+        model.addAttribute("filteredExcusedCount", filteredExcusedCount);
+        model.addAttribute("filteredAttendancePercentage", filteredAttendancePercentage);
+        model.addAttribute("studentAttendancePercentages", studentAttendancePercentages);
+        model.addAttribute("selectedSubjectId", subjectId);
+        model.addAttribute("selectedStudentId", studentId);
+        model.addAttribute("selectedDepartmentId", departmentId);
+        model.addAttribute("selectedSemester", semester);
         return "admin/attendance";
-    }
-
-    @PostMapping("/attendance/save")
-    public String saveAttendance(
-            Authentication authentication,
-            @RequestParam(required = false) Long id,
-            @RequestParam Long studentId,
-            @RequestParam Long subjectId,
-            @RequestParam LocalDate date,
-            @RequestParam AttendanceStatus status,
-            RedirectAttributes redirectAttributes) {
-
-        if (studentId == null || subjectId == null || date == null || status == null) {
-            redirectAttributes.addFlashAttribute("error", "Student, subject, date, and status are required.");
-            return "redirect:/admin/attendance";
-        }
-
-        User student = userRepository.findById(studentId).orElse(null);
-        Subject subject = subjectRepository.findById(subjectId).orElse(null);
-
-        if (student == null || subject == null) {
-            redirectAttributes.addFlashAttribute("error", "Please select a valid student and subject.");
-            return "redirect:/admin/attendance";
-        }
-
-        if (attendanceRepository.findByStudentIdAndSubjectIdAndDate(studentId, subjectId, date).filter(existing -> id == null || !existing.getId().equals(id)).isPresent()) {
-            redirectAttributes.addFlashAttribute("error", "Attendance record already exists for this student, subject, and date.");
-            return "redirect:/admin/attendance";
-        }
-
-        Attendance attendance = id != null ? attendanceRepository.findById(id).orElse(null) : new Attendance();
-        if (attendance == null) {
-            attendance = new Attendance();
-        }
-
-        attendance.setStudent(student);
-        attendance.setSubject(subject);
-        attendance.setDate(date);
-        attendance.setStatus(status);
-        attendanceRepository.save(attendance);
-
-        redirectAttributes.addFlashAttribute("success", id == null ? "Attendance record created successfully." : "Attendance record updated successfully.");
-        return "redirect:/admin/attendance";
-    }
-
-    @PostMapping("/attendance/delete")
-    public String deleteAttendance(@RequestParam Long id, RedirectAttributes redirectAttributes) {
-        if (id == null) {
-            redirectAttributes.addFlashAttribute("error", "Attendance record not found.");
-            return "redirect:/admin/attendance";
-        }
-
-        if (!attendanceRepository.existsById(id)) {
-            redirectAttributes.addFlashAttribute("error", "Attendance record not found.");
-            return "redirect:/admin/attendance";
-        }
-
-        attendanceRepository.deleteById(id);
-        redirectAttributes.addFlashAttribute("success", "Attendance record deleted successfully.");
-        return "redirect:/admin/attendance";
     }
 
     @GetMapping("/assignments")
@@ -580,6 +1005,7 @@ public class AdminController {
             Authentication authentication,
             @RequestParam(required = false) String search,
             @RequestParam(required = false) Long studentId,
+            @RequestParam(required = false) Long departmentId,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String academicYear,
             @RequestParam(defaultValue = "false") boolean overdueOnly,
@@ -597,6 +1023,7 @@ public class AdminController {
 
         List<Fee> feeList = feeRepository.searchFees(
                 studentId,
+                departmentId,
                 paymentStatus,
                 academicYear == null || academicYear.isBlank() ? null : academicYear.trim(),
                 search == null || search.isBlank() ? null : search.trim(),
@@ -604,9 +1031,12 @@ public class AdminController {
                 LocalDate.now());
         model.addAttribute("user", user);
         model.addAttribute("feeList", feeList);
+        model.addAttribute("feeGroups", groupFeesByDepartment(feeList));
+        model.addAttribute("departments", departmentRepository.findAll());
         model.addAttribute("students", userRepository.findByRole(Role.STUDENT));
         model.addAttribute("paymentStatuses", FeePaymentStatus.values());
         model.addAttribute("selectedStudentId", studentId);
+        model.addAttribute("selectedDepartmentId", departmentId);
         model.addAttribute("selectedStatus", paymentStatus == null ? "" : paymentStatus.name());
         model.addAttribute("selectedAcademicYear", academicYear);
         model.addAttribute("search", search);
@@ -616,6 +1046,27 @@ public class AdminController {
         model.addAttribute("pendingFees", feeRepository.sumOutstandingAmount());
         model.addAttribute("overdueFees", feeRepository.sumOverdueAmount(LocalDate.now()));
         return "admin/fees";
+    }
+
+    private List<DepartmentFees> groupFeesByDepartment(List<Fee> fees) {
+        Map<Long, List<Fee>> byDepartment = new LinkedHashMap<>();
+        for (Fee fee : fees) {
+            Long departmentId = fee.getStudent().getDepartment() == null
+                    ? null
+                    : fee.getStudent().getDepartment().getId();
+            byDepartment.computeIfAbsent(departmentId, ignored -> new ArrayList<>()).add(fee);
+        }
+        Map<Long, Department> departments = departmentRepository.findAll().stream()
+                .collect(Collectors.toMap(Department::getId, department -> department));
+        List<DepartmentFees> groups = new ArrayList<>();
+        byDepartment.forEach((departmentId, departmentFees) -> {
+            Department department = departmentId == null ? null : departments.get(departmentId);
+            groups.add(new DepartmentFees(
+                    department == null ? "Unassigned" : department.getName(),
+                    departmentId,
+                    departmentFees));
+        });
+        return groups;
     }
 
     @PostMapping("/fees/save")
@@ -764,6 +1215,30 @@ public class AdminController {
         feeRepository.deleteById(id);
         redirectAttributes.addFlashAttribute("success", "Fee record deleted successfully.");
         return "redirect:/admin/fees";
+    }
+
+    private List<DepartmentStudents> groupStudentsByDepartment(List<User> students) {
+        List<DepartmentStudents> groups = departmentRepository.findAll().stream()
+                .sorted(Comparator.comparing(Department::getName, Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)))
+                .map(department -> new DepartmentStudents(
+                        department.getName(),
+                        department.getId(),
+                        students.stream()
+                                .filter(student -> student.getDepartment() != null
+                                        && department.getId().equals(student.getDepartment().getId()))
+                                .sorted(Comparator.comparing(
+                                        student -> (student.getFirstName() + " " + student.getLastName()).toLowerCase(Locale.ROOT)))
+                                .toList()))
+                .collect(Collectors.toCollection(ArrayList::new));
+        List<User> unassigned = students.stream()
+                .filter(student -> student.getDepartment() == null)
+                .sorted(Comparator.comparing(
+                        student -> (student.getFirstName() + " " + student.getLastName()).toLowerCase(Locale.ROOT)))
+                .toList();
+        if (!unassigned.isEmpty()) {
+            groups.add(new DepartmentStudents("Unassigned", null, unassigned));
+        }
+        return groups;
     }
 
     private BigDecimal parseMoney(String value, String fieldName) {

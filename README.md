@@ -3,8 +3,8 @@
 CampusFlow is an integrated college platform built with Java 21, Spring Boot, MySQL, and a modern responsive HTML/CSS/JavaScript frontend (Thymeleaf).
 
 ## Features
-- **Role-based Authentication**: Secure access for Admin, HOD, Faculty, and Students.
-- **Dashboards**: Dedicated dashboards with unique functions per role.
+- **Role-based Authentication**: Secure access for Admin, Faculty, and Students.
+- **Dashboards**: Dedicated Admin, Faculty, and Student portals.
 - **Campus Pulse**: Analytics dashboard summarizing college metrics.
 - **Automated Seeding**: System automatically populates with test users and data on startup.
 
@@ -42,7 +42,6 @@ The application will automatically seed the database with the following demo acc
 | Role | Email | Password |
 |------|-------|----------|
 | Admin | `admin@campusflow.com` | `admin123` |
-| HOD | `hod@campusflow.com` | `hod123` |
 | Faculty | `faculty@campusflow.com` | `faculty123` |
 | Student | `student@campusflow.com` | `student123` |
 

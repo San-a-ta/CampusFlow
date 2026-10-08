@@ -6,6 +6,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface StudyMaterialRepository extends JpaRepository<StudyMaterial, Long> {
     java.util.List<StudyMaterial> findBySubjectId(Long subjectId);
+    java.util.List<StudyMaterial> findBySubjectIdInOrderByUploadDateDesc(java.util.List<Long> subjectIds);
     java.util.List<StudyMaterial> findAllByOrderByUploadDateDesc();
     java.util.List<StudyMaterial> findBySubjectIdOrderByUploadDateDesc(Long subjectId);
 }

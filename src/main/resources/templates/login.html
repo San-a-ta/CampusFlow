@@ -114,8 +114,24 @@
             .login-form-section { width: 100%; padding: 40px 30px; }
         }
     </style>
+    <link rel="stylesheet" th:href="@{/css/campusflow-theme.css}">
+    <script>
+        (() => {
+            const selected = localStorage.getItem('campusflow-theme') || 'system';
+            const dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            document.documentElement.dataset.theme = selected === 'system' ? (dark ? 'dark' : 'light') : selected;
+        })();
+    </script>
+    <script th:src="@{/js/campusflow-theme.js}" defer></script>
 </head>
 <body>
+    <div class="position-fixed top-0 end-0 p-3 d-flex align-items-center gap-2" style="z-index: 10;">
+        <label for="theme-selector" class="visually-hidden">Color theme</label>
+        <select id="theme-selector" class="form-select form-select-sm theme-control" aria-label="Color theme">
+            <option value="light">Light</option><option value="dark">Dark</option>
+            <option value="pastel">Soft Pastel</option><option value="system">System</option>
+        </select>
+    </div>
     <div class="login-wrapper">
         <div class="login-form-section">
             <div class="brand">
@@ -154,7 +170,6 @@
             <div class="demo-accounts text-muted">
                 <p class="fw-semibold mb-2 text-dark"><i class="bi bi-info-circle me-1"></i> Demo Credentials:</p>
                 <div class="d-flex justify-content-between mb-1"><span>Admin:</span> <code class="bg-white px-2 py-1 rounded border">admin@campusflow.com</code> <code>admin123</code></div>
-                <div class="d-flex justify-content-between mb-1"><span>HOD:</span> <code class="bg-white px-2 py-1 rounded border">hod@campusflow.com</code> <code>hod123</code></div>
                 <div class="d-flex justify-content-between mb-1"><span>Faculty:</span> <code class="bg-white px-2 py-1 rounded border">faculty@campusflow.com</code> <code>faculty123</code></div>
                 <div class="d-flex justify-content-between"><span>Student:</span> <code class="bg-white px-2 py-1 rounded border">student@campusflow.com</code> <code>student123</code></div>
             </div>

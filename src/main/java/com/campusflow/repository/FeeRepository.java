@@ -16,6 +16,7 @@ public interface FeeRepository extends JpaRepository<Fee, Long> {
     @Query("""
             select f from Fee f
             where (:studentId is null or f.student.id = :studentId)
+              and (:departmentId is null or f.student.department.id = :departmentId)
               and (:paymentStatus is null or f.paymentStatus = :paymentStatus)
               and (:academicYear is null or f.academicYear = :academicYear)
               and (:search is null or
@@ -26,6 +27,7 @@ public interface FeeRepository extends JpaRepository<Fee, Long> {
             """)
     List<Fee> searchFees(
             @Param("studentId") Long studentId,
+            @Param("departmentId") Long departmentId,
             @Param("paymentStatus") FeePaymentStatus paymentStatus,
             @Param("academicYear") String academicYear,
             @Param("search") String search,

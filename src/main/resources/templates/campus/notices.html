@@ -55,12 +55,26 @@
         .badge-dept { background-color: rgba(14,165,233,0.1); color: #0ea5e9; }
         .badge-campus { background-color: rgba(16,185,129,0.1); color: #10b981; }
     </style>
+    <link rel="stylesheet" th:href="@{/css/campusflow-theme.css}">
+    <script>
+        (() => {
+            const selected = localStorage.getItem('campusflow-theme') || 'system';
+            const dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            document.documentElement.dataset.theme = selected === 'system' ? (dark ? 'dark' : 'light') : selected;
+        })();
+    </script>
+    <script th:src="@{/js/campusflow-theme.js}" defer></script>
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-custom">
         <div class="container">
             <a class="navbar-brand" href="javascript:history.back()"><i class="bi bi-arrow-left me-2"></i> CampusFlow</a>
             <div class="ms-auto d-flex align-items-center">
+                <label for="theme-selector" class="visually-hidden">Color theme</label>
+                <select id="theme-selector" class="form-select form-select-sm theme-control me-3" aria-label="Color theme">
+                    <option value="light">Light</option><option value="dark">Dark</option>
+                    <option value="pastel">Soft Pastel</option><option value="system">System</option>
+                </select>
                 <span class="text-white fw-medium"><i class="bi bi-person-circle me-1"></i> <span th:text="${user.firstName}">User</span></span>
             </div>
         </div>

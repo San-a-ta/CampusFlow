@@ -1,93 +1,187 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{admin/fragments :: head('Students')}">
-</head>
+<head th:replace="~{admin/fragments :: head('Students')}"></head>
 <body>
-    <div class="wrapper">
-        <div th:replace="~{admin/fragments :: sidebar('students')}"></div>
-        
-        <div class="main-panel">
-            <div th:replace="~{admin/fragments :: navbar('Students Management')}"></div>
-
-            <div class="content-padding">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <div>
-                        <h2 class="page-title">Students</h2>
-                        <p class="text-muted mb-0">Manage and view all enrolled students</p>
-                    </div>
-                    <div>
-                        <button class="btn btn-light border shadow-sm me-2"><i class="bi bi-filter me-1"></i> Filter</button>
-                        <button class="btn btn-primary shadow-sm"><i class="bi bi-person-plus-fill me-1"></i> Add Student</button>
-                    </div>
+<div class="wrapper">
+    <div th:replace="~{admin/fragments :: sidebar('students')}"></div>
+    <div class="main-panel">
+        <div th:replace="~{admin/fragments :: navbar('Students Management')}"></div>
+        <main class="content-padding">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+                <div>
+                    <h1 class="page-title">Students</h1>
+                    <p class="text-muted mb-0">Browse student records by their database department.</p>
                 </div>
-                
-                <div class="card">
-                    <div class="card-body p-0">
-                        <div class="table-responsive">
-                            <table class="table table-hover align-middle">
-                                <thead>
-                                    <tr>
-                                        <th style="padding-left: 24px; width: 60px;">ID</th>
-                                        <th>Student Name</th>
-                                        <th>Email Address</th>
-                                        <th>Department</th>
-                                        <th>Sem</th>
-                                        <th class="text-end" style="padding-right: 24px;">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr th:each="student : ${students}">
-                                        <td style="padding-left: 24px;" class="text-muted fw-medium" th:text="${'#' + student.id}">#1</td>
-                                        <td>
+                <button class="btn btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#studentModal">
+                    <i class="bi bi-person-plus-fill me-1"></i> Add Student
+                </button>
+            </div>
+            <div th:if="${success}" class="alert alert-success alert-dismissible fade show" role="status">
+                <span th:text="${success}">Success</span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                <span th:text="${error}">Error</span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            <section class="card mb-4">
+                <div class="card-header">
+                    <form th:action="@{/admin/students}" method="get" class="row g-2 align-items-end">
+                        <div class="col-md-6">
+                            <label for="studentSearch" class="form-label small fw-semibold mb-1">Search students</label>
+                            <input id="studentSearch" type="search" name="search" class="form-control"
+                                   placeholder="Full name or email" th:value="${search}">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="studentDepartmentFilter" class="form-label small fw-semibold mb-1">Department</label>
+                            <select id="studentDepartmentFilter" name="departmentId" class="form-select">
+                                <option value="">All departments</option>
+                                <option th:each="department : ${departments}" th:value="${department.id}"
+                                        th:selected="${selectedDepartmentId != null and selectedDepartmentId == department.id}"
+                                        th:text="${department.name}"></option>
+                            </select>
+                        </div>
+                        <div class="col-md-2 d-flex gap-2">
+                            <button class="btn btn-outline-primary flex-grow-1" type="submit"><i class="bi bi-search"></i> Filter</button>
+                            <a class="btn btn-light border" th:href="@{/admin/students}">Clear</a>
+                        </div>
+                    </form>
+                </div>
+            </section>
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h2 class="h5 fw-bold mb-0">Department folders</h2>
+                <span class="text-muted small" th:text="${students.size() + ' matching students'}">0 students</span>
+            </div>
+            <div class="accordion" id="studentsByDepartment">
+                <section class="accordion-item mb-3 rounded-3 overflow-hidden border"
+                         th:each="group, groupStat : ${departmentGroups}">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button fw-semibold" type="button"
+                                th:classappend="${groupStat.first} ? '' : 'collapsed'"
+                                th:attr="data-bs-toggle='collapse',data-bs-target=|#studentDepartment-${groupStat.index}|,aria-controls=|studentDepartment-${groupStat.index}|"
+                                th:aria-expanded="${groupStat.first}">
+                            <i class="bi bi-folder2-open me-2 text-primary"></i>
+                            <span th:text="${group.name}">Department</span>
+                            <span class="badge bg-secondary-subtle text-secondary-emphasis ms-3"
+                                  th:text="${group.students.size()}">0</span>
+                        </button>
+                    </h2>
+                    <div class="accordion-collapse collapse"
+                         th:classappend="${groupStat.first} ? 'show' : ''"
+                         th:id="|studentDepartment-${groupStat.index}|">
+                        <div class="accordion-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle">
+                                    <thead><tr><th class="ps-4">Student</th><th>Email</th><th>Semester</th><th class="text-end pe-4">Actions</th></tr></thead>
+                                    <tbody>
+                                    <tr th:each="student : ${group.students}">
+                                        <td class="ps-4">
                                             <div class="d-flex align-items-center">
-                                                <div class="user-avatar me-3 shadow-sm" style="width: 40px; height: 40px; font-size: 0.85rem;" th:text="${#strings.substring(student.firstName,0,1) + #strings.substring(student.lastName,0,1)}">JD</div>
+                                                <div class="user-avatar me-3 shadow-sm" style="width:40px;height:40px;font-size:.85rem;"
+                                                     th:text="${#strings.substring(student.firstName,0,1) + #strings.substring(student.lastName,0,1)}">JD</div>
                                                 <div>
-                                                    <div class="fw-semibold text-dark" th:text="${student.firstName + ' ' + student.lastName}">John Doe</div>
-                                                    <small class="text-muted">Enrolled 2023</small>
+                                                    <a class="fw-semibold text-decoration-none"
+                                                       th:href="@{/admin/students/{id}(id=${student.id})}"
+                                                       th:text="${student.firstName + ' ' + student.lastName}">Student Name</a>
+                                                    <small class="text-muted d-block" th:text="${student.role}">STUDENT</small>
                                                 </div>
                                             </div>
                                         </td>
-                                        <td class="text-muted" th:text="${student.email}">student@campusflow.com</td>
-                                        <td>
-                                            <span class="badge badge-soft-info" th:if="${student.department != null}">
-                                                <i class="bi bi-building me-1"></i> <span th:text="${student.department.name}">CS</span>
-                                            </span>
-                                            <span class="text-muted small" th:if="${student.department == null}">Not Assigned</span>
-                                        </td>
-                                        <td>
-                                            <span class="badge bg-light text-dark border" th:text="${'Sem ' + student.currentSemester}">Sem 1</span>
-                                        </td>
-                                        <td class="text-end" style="padding-right: 24px;">
-                                            <button class="btn btn-light btn-action text-primary me-1" title="Edit"><i class="bi bi-pencil-square"></i></button>
-                                            <button class="btn btn-light btn-action text-danger" title="Delete"><i class="bi bi-trash3"></i></button>
-                                        </td>
-                                    </tr>
-                                    <tr th:if="${#lists.isEmpty(students)}">
-                                        <td colspan="6" class="text-center py-5">
-                                            <div class="text-muted">
-                                                <i class="bi bi-people fs-1 d-block mb-3 opacity-50"></i>
-                                                <h5 class="fw-semibold">No students found</h5>
-                                                <p class="mb-0">Get started by adding a new student to the system.</p>
-                                            </div>
+                                        <td class="text-muted" th:text="${student.email}">student@example.com</td>
+                                        <td><span class="badge bg-light text-dark border"
+                                                  th:text="${student.currentSemester != null ? 'Semester ' + student.currentSemester : 'Not set'}">Semester</span></td>
+                                        <td class="text-end pe-4">
+                                            <a class="btn btn-sm btn-outline-info me-1"
+                                               th:href="@{/admin/students/{id}(id=${student.id})}" title="Academic performance">
+                                                <i class="bi bi-graph-up"></i><span class="visually-hidden">View academic performance</span>
+                                            </a>
+                                            <button type="button" class="btn btn-light btn-action text-primary me-1" title="Edit"
+                                                    th:attr="data-id=${student.id},data-first-name=${student.firstName},data-last-name=${student.lastName},data-email=${student.email},data-department-id=${student.department == null ? '' : student.department.id},data-semester=${student.currentSemester}"
+                                                    onclick="populateStudentForm(this)"><i class="bi bi-pencil-square"></i></button>
+                                            <form th:action="@{/admin/students/delete}" method="post" class="d-inline">
+                                                <input type="hidden" name="id" th:value="${student.id}">
+                                                <button type="submit" class="btn btn-light btn-action text-danger" title="Delete"
+                                                        onclick="return confirm('Delete this student account? Related records may prevent deletion.')">
+                                                    <i class="bi bi-trash3"></i>
+                                                </button>
+                                            </form>
                                         </td>
                                     </tr>
-                                </tbody>
-                            </table>
+                                    <tr th:if="${#lists.isEmpty(group.students)}">
+                                        <td colspan="4" class="text-center text-muted py-4">No students in this department match the current filters.</td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
-                    <div class="card-footer bg-white border-top px-4 py-3 d-flex justify-content-between align-items-center" th:if="${not #lists.isEmpty(students)}">
-                        <span class="text-muted small" th:text="${'Showing ' + students.size() + ' results'}">Showing 10 results</span>
-                        <nav aria-label="Page navigation">
-                            <ul class="pagination pagination-sm m-0">
-                                <li class="page-item disabled"><a class="page-link border-0" href="#">Previous</a></li>
-                                <li class="page-item active"><a class="page-link border-0 rounded" href="#">1</a></li>
-                                <li class="page-item"><a class="page-link border-0 text-dark" href="#">Next</a></li>
-                            </ul>
-                        </nav>
-                    </div>
+                </section>
+                <div th:if="${#lists.isEmpty(departmentGroups)}" class="card card-body text-center text-muted">
+                    No departments are available yet.
                 </div>
             </div>
+        </main>
+    </div>
+</div>
+<div class="modal fade" id="studentModal" tabindex="-1" aria-labelledby="studentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <form th:action="@{/admin/students/save}" method="post">
+                <div class="modal-header">
+                    <h2 class="modal-title fs-5 fw-bold" id="studentModalLabel">Student Details</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="studentId" name="id">
+                    <div class="row g-3">
+                        <div class="col-md-6"><label for="studentFirstName" class="form-label">First name</label><input id="studentFirstName" name="firstName" class="form-control" maxlength="100" required></div>
+                        <div class="col-md-6"><label for="studentLastName" class="form-label">Last name</label><input id="studentLastName" name="lastName" class="form-control" maxlength="100" required></div>
+                        <div class="col-md-6"><label for="studentEmail" class="form-label">Email</label><input id="studentEmail" name="email" type="email" class="form-control" maxlength="255" required></div>
+                        <div class="col-md-6" id="studentPasswordGroup"><label for="studentPassword" class="form-label">Initial password</label><input id="studentPassword" name="password" type="password" class="form-control" minlength="8" maxlength="72" required></div>
+                        <div class="col-md-6">
+                            <label for="studentDepartment" class="form-label">Department</label>
+                            <select id="studentDepartment" name="departmentId" class="form-select" required>
+                                <option value="">Select department</option>
+                                <option th:each="department : ${departments}" th:value="${department.id}" th:text="${department.name}"></option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="studentSemester" class="form-label">Current semester</label>
+                            <select id="studentSemester" name="currentSemester" class="form-select" required>
+                                <option value="">Select semester</option>
+                                <option th:each="semester : ${#numbers.sequence(1, 12)}" th:value="${semester}" th:text="${semester}"></option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Student</button>
+                </div>
+            </form>
         </div>
     </div>
+</div>
+<script>
+    function populateStudentForm(button) {
+        document.getElementById('studentId').value = button.dataset.id || '';
+        document.getElementById('studentFirstName').value = button.dataset.firstName || '';
+        document.getElementById('studentLastName').value = button.dataset.lastName || '';
+        document.getElementById('studentEmail').value = button.dataset.email || '';
+        document.getElementById('studentDepartment').value = button.dataset.departmentId || '';
+        document.getElementById('studentSemester').value = button.dataset.semester || '';
+        document.getElementById('studentPassword').required = false;
+        document.getElementById('studentPasswordGroup').classList.add('d-none');
+        document.getElementById('studentModalLabel').textContent = 'Edit Student';
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('studentModal')).show();
+    }
+    document.getElementById('studentModal').addEventListener('hidden.bs.modal', function () {
+        this.querySelector('form').reset();
+        document.getElementById('studentId').value = '';
+        document.getElementById('studentPassword').required = true;
+        document.getElementById('studentPasswordGroup').classList.remove('d-none');
+        document.getElementById('studentModalLabel').textContent = 'Student Details';
+    });
+</script>
 </body>
 </html>

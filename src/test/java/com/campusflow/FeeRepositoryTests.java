@@ -17,7 +17,7 @@ class FeeRepositoryTests {
 
     @Test
     void feeQueriesReturnDatabaseResults() {
-        assertNotNull(feeRepository.searchFees(null, null, null, null, false, LocalDate.now()));
+        assertNotNull(feeRepository.searchFees(null, null, null, null, null, false, LocalDate.now()));
         assertNotNull(feeRepository.sumTotalAmount());
         assertNotNull(feeRepository.sumPaidAmount());
         assertNotNull(feeRepository.sumOutstandingAmount());

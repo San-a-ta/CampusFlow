@@ -76,6 +76,15 @@
                                 </select>
                             </div>
                             <div class="col-lg-2 col-md-6">
+                                <label for="feeDepartment" class="form-label small fw-semibold mb-1">Department</label>
+                                <select id="feeDepartment" name="departmentId" class="form-select">
+                                    <option value="">All departments</option>
+                                    <option th:each="department : ${departments}" th:value="${department.id}"
+                                            th:selected="${selectedDepartmentId != null and selectedDepartmentId == department.id}"
+                                            th:text="${department.name}"></option>
+                                </select>
+                            </div>
+                            <div class="col-lg-1 col-md-6">
                                 <label for="feeStatus" class="form-label small fw-semibold mb-1">Status</label>
                                 <select id="feeStatus" name="status" class="form-select">
                                     <option value="">All statuses</option>
@@ -89,7 +98,7 @@
                                 <input id="academicYearFilter" type="text" name="academicYear" class="form-control"
                                        placeholder="2026-2027" th:value="${selectedAcademicYear}" />
                             </div>
-                            <div class="col-lg-2 col-md-6">
+                            <div class="col-lg-1 col-md-6">
                                 <div class="form-check mb-2">
                                     <input id="overdueOnly" type="checkbox" name="overdueOnly" value="true"
                                            class="form-check-input" th:checked="${overdueOnly}" />
@@ -102,73 +111,75 @@
                             </div>
                         </form>
                     </div>
-                    <div class="card-body p-0">
-                        <div class="table-responsive">
-                            <table class="table table-hover align-middle mb-0">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>Student</th>
-                                        <th>Academic Period</th>
-                                        <th>Total</th>
-                                        <th>Paid</th>
-                                        <th>Outstanding</th>
-                                        <th>Status</th>
-                                        <th>Due Date</th>
-                                        <th class="text-end">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr th:each="fee : ${feeList}">
-                                        <td>
-                                            <div class="fw-semibold text-dark" th:text="${fee.student.firstName + ' ' + fee.student.lastName}">Student</div>
-                                            <small class="text-muted" th:text="${fee.student.email}">student@example.com</small>
-                                        </td>
-                                        <td>
-                                            <div th:text="${fee.academicYear}">2026-2027</div>
-                                            <small class="text-muted" th:text="${'Semester ' + fee.semester}">Semester</small>
-                                        </td>
-                                        <td th:text="${'₹' + #numbers.formatDecimal(fee.totalAmount, 1, 'COMMA', 2, 'POINT')}">₹0.00</td>
-                                        <td th:text="${'₹' + #numbers.formatDecimal(fee.paidAmount, 1, 'COMMA', 2, 'POINT')}">₹0.00</td>
-                                        <td class="fw-semibold" th:text="${'₹' + #numbers.formatDecimal(fee.outstandingAmount, 1, 'COMMA', 2, 'POINT')}">₹0.00</td>
-                                        <td>
-                                            <span class="badge rounded-pill"
-                                                  th:classappend="${fee.paymentStatus.name() == 'PAID' ? 'badge-soft-success' : (fee.paymentStatus.name() == 'PARTIAL' ? 'badge-soft-warning' : 'badge-soft-danger')}"
-                                                  th:text="${fee.paymentStatus}">PENDING</span>
-                                            <span th:if="${fee.overdue}" class="badge badge-soft-danger rounded-pill ms-1">OVERDUE</span>
-                                        </td>
-                                        <td th:text="${#temporals.format(fee.dueDate, 'dd MMM yyyy')}">Date</td>
-                                        <td class="text-end">
-                                            <div class="d-flex justify-content-end gap-2">
-                                                <button type="button" class="btn btn-sm btn-outline-success"
-                                                        th:if="${fee.outstandingAmount.compareTo(T(java.math.BigDecimal).ZERO) > 0}"
-                                                        th:attr="data-id=${fee.id},data-outstanding=${fee.outstandingAmount}"
-                                                        onclick="populatePaymentForm(this)">
-                                                    <i class="bi bi-cash-coin me-1"></i> Payment
-                                                </button>
-                                                <button type="button" class="btn btn-sm btn-outline-primary"
-                                                        th:attr="data-id=${fee.id},data-student-id=${fee.student.id},data-total=${fee.totalAmount},data-paid=${fee.paidAmount},data-due-date=${fee.dueDate},data-payment-date=${fee.paymentDate},data-academic-year=${fee.academicYear},data-semester=${fee.semester}"
-                                                        onclick="populateFeeForm(this)">
-                                                    <i class="bi bi-pencil-square me-1"></i> Edit
-                                                </button>
-                                                <form th:action="@{/admin/fees/delete}" method="post" class="m-0">
-                                                    <input type="hidden" name="id" th:value="${fee.id}" />
-                                                    <button type="submit" class="btn btn-sm btn-outline-danger"
-                                                            onclick="return confirm('Delete this fee record?')">
-                                                        <i class="bi bi-trash me-1"></i> Delete
-                                                    </button>
-                                                </form>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    <tr th:if="${#lists.isEmpty(feeList)}">
-                                        <td colspan="8" class="text-center py-5 text-muted">
-                                            <i class="bi bi-receipt fs-1 d-block mb-3 opacity-50"></i>
-                                            <h5 class="fw-semibold">No fee records found</h5>
-                                            <p class="mb-0">Add a fee record or adjust your filters.</p>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                    <div class="card-body">
+                        <div class="accordion" id="feesByDepartment">
+                            <section class="accordion-item mb-3 rounded-3 overflow-hidden border"
+                                     th:each="group, groupStat : ${feeGroups}">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button fw-semibold" type="button"
+                                            th:classappend="${groupStat.first} ? '' : 'collapsed'"
+                                            th:attr="data-bs-toggle='collapse',data-bs-target=|#feeDepartment-${groupStat.index}|,aria-controls=|feeDepartment-${groupStat.index}|"
+                                            th:aria-expanded="${groupStat.first}">
+                                        <i class="bi bi-folder2-open me-2 text-primary"></i>
+                                        <span th:text="${group.name}">Department</span>
+                                        <span class="badge bg-secondary-subtle text-secondary-emphasis ms-3"
+                                              th:text="${group.fees.size() + ' fee records'}">0 fee records</span>
+                                    </button>
+                                </h2>
+                                <div class="accordion-collapse collapse"
+                                     th:classappend="${groupStat.first} ? 'show' : ''"
+                                     th:id="|feeDepartment-${groupStat.index}|">
+                                    <div class="accordion-body p-0">
+                                        <div class="table-responsive">
+                                            <table class="table table-hover align-middle mb-0">
+                                                <thead class="table-light">
+                                                <tr><th>Student</th><th>Academic Period</th><th>Total</th><th>Paid</th><th>Outstanding</th><th>Status</th><th>Due Date</th><th class="text-end">Actions</th></tr>
+                                                </thead>
+                                                <tbody>
+                                                <tr th:each="fee : ${group.fees}">
+                                                    <td>
+                                                        <div class="fw-semibold text-dark" th:text="${fee.student.firstName + ' ' + fee.student.lastName}">Student</div>
+                                                        <small class="text-muted" th:text="${fee.student.email}">student@example.com</small>
+                                                    </td>
+                                                    <td><div th:text="${fee.academicYear}">2026-2027</div><small class="text-muted" th:text="${'Semester ' + fee.semester}">Semester</small></td>
+                                                    <td th:text="${'₹' + #numbers.formatDecimal(fee.totalAmount, 1, 'COMMA', 2, 'POINT')}">₹0.00</td>
+                                                    <td th:text="${'₹' + #numbers.formatDecimal(fee.paidAmount, 1, 'COMMA', 2, 'POINT')}">₹0.00</td>
+                                                    <td class="fw-semibold" th:text="${'₹' + #numbers.formatDecimal(fee.outstandingAmount, 1, 'COMMA', 2, 'POINT')}">₹0.00</td>
+                                                    <td>
+                                                        <span class="badge rounded-pill"
+                                                              th:classappend="${fee.paymentStatus.name() == 'PAID' ? 'badge-soft-success' : (fee.paymentStatus.name() == 'PARTIAL' ? 'badge-soft-warning' : 'badge-soft-danger')}"
+                                                              th:text="${fee.paymentStatus}">PENDING</span>
+                                                        <span th:if="${fee.overdue}" class="badge badge-soft-danger rounded-pill ms-1">OVERDUE</span>
+                                                    </td>
+                                                    <td th:text="${#temporals.format(fee.dueDate, 'dd MMM yyyy')}">Date</td>
+                                                    <td class="text-end">
+                                                        <div class="d-flex justify-content-end gap-2">
+                                                            <button type="button" class="btn btn-sm btn-outline-success"
+                                                                    th:if="${fee.outstandingAmount.compareTo(T(java.math.BigDecimal).ZERO) > 0}"
+                                                                    th:attr="data-id=${fee.id},data-outstanding=${fee.outstandingAmount}"
+                                                                    onclick="populatePaymentForm(this)">Payment</button>
+                                                            <button type="button" class="btn btn-sm btn-outline-primary"
+                                                                    th:attr="data-id=${fee.id},data-student-id=${fee.student.id},data-total=${fee.totalAmount},data-paid=${fee.paidAmount},data-due-date=${fee.dueDate},data-payment-date=${fee.paymentDate},data-academic-year=${fee.academicYear},data-semester=${fee.semester}"
+                                                                    onclick="populateFeeForm(this)">Edit</button>
+                                                            <form th:action="@{/admin/fees/delete}" method="post" class="m-0">
+                                                                <input type="hidden" name="id" th:value="${fee.id}">
+                                                                <button type="submit" class="btn btn-sm btn-outline-danger"
+                                                                        onclick="return confirm('Delete this fee record?')">Delete</button>
+                                                            </form>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+                            <div th:if="${#lists.isEmpty(feeGroups)}" class="text-center text-muted py-5">
+                                <i class="bi bi-receipt fs-1 d-block mb-3 opacity-50"></i>
+                                <h5 class="fw-semibold">No fee records found</h5>
+                                <p class="mb-0">Add a fee record or adjust your filters.</p>
+                            </div>
                         </div>
                     </div>
                 </div>

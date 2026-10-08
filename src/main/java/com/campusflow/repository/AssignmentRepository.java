@@ -9,5 +9,6 @@ import java.util.List;
 @Repository
 public interface AssignmentRepository extends JpaRepository<Assignment, Long> {
     List<Assignment> findBySubjectId(Long subjectId);
+    List<Assignment> findBySubjectIdInOrderByDueDateAsc(List<Long> subjectIds);
     List<Assignment> findAllByOrderByDueDateDesc();
 }

@@ -282,6 +282,15 @@
             .mobile-toggle { display: block; }
         }
     </style>
+    <link rel="stylesheet" th:href="@{/css/campusflow-theme.css}">
+    <script>
+        (() => {
+            const selected = localStorage.getItem('campusflow-theme') || 'system';
+            const dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            document.documentElement.dataset.theme = selected === 'system' ? (dark ? 'dark' : 'light') : selected;
+        })();
+    </script>
+    <script th:src="@{/js/campusflow-theme.js}" defer></script>
 </head>
 <body>
     <div th:fragment="sidebar(activeLink)">
@@ -359,6 +368,14 @@
                 <h5 class="m-0 fw-semibold text-dark d-none d-sm-block" th:text="${pageName}">Dashboard</h5>
                 
                 <div class="ms-auto d-flex align-items-center">
+                    <label for="theme-selector" class="visually-hidden">Color theme</label>
+                    <select id="theme-selector" class="form-select form-select-sm theme-control me-3"
+                            aria-label="Color theme">
+                        <option value="light">Light</option>
+                        <option value="dark">Dark</option>
+                        <option value="pastel">Soft Pastel</option>
+                        <option value="system">System</option>
+                    </select>
                     <div class="position-relative navbar-search d-none d-md-block me-3">
                         <i class="bi bi-search"></i>
                         <input type="text" class="form-control form-control-sm" placeholder="Search..." style="width: 250px;">
@@ -369,28 +386,47 @@
                         <span class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle"></span>
                     </button>
                     
-                    <div class="dropdown">
-                        <div class="user-profile" data-bs-toggle="dropdown" aria-expanded="false">
-                            <div class="user-avatar" th:text="${#strings.substring(user.firstName,0,1) + #strings.substring(user.lastName,0,1)}">AD</div>
+                    <div>
+                        <button type="button" class="user-profile border-0 bg-transparent" data-bs-toggle="modal" data-bs-target="#adminProfileModal" aria-label="View admin profile">
+                            <div class="user-avatar"
+                                 th:text="${(user.firstName != null and !user.firstName.isEmpty() ? #strings.substring(user.firstName,0,1) : #strings.substring(user.email,0,1)) + (user.lastName != null and !user.lastName.isEmpty() ? #strings.substring(user.lastName,0,1) : '')}">AD</div>
                             <div class="d-none d-md-block text-start">
-                                <div class="fw-semibold text-dark lh-1" th:text="${user.firstName + ' ' + user.lastName}">Admin Name</div>
+                                <div class="fw-semibold text-dark lh-1"
+                                     th:text="${user.firstName != null and user.lastName != null ? user.firstName + ' ' + user.lastName : user.email}">Admin Name</div>
                                 <small class="text-muted" th:text="${user.role}">ADMIN</small>
                             </div>
-                        </div>
-                        <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2 rounded-3">
-                            <li><a class="dropdown-item py-2" href="#"><i class="bi bi-person me-2"></i> My Profile</a></li>
-                            <li><a class="dropdown-item py-2" href="#"><i class="bi bi-gear me-2"></i> Account Settings</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li>
-                                <form th:action="@{/logout}" method="post">
-                                    <button class="dropdown-item py-2 text-danger" type="submit"><i class="bi bi-box-arrow-right me-2"></i> Logout</button>
-                                </form>
-                            </li>
-                        </ul>
+                        </button>
                     </div>
                 </div>
             </div>
         </nav>
+
+        <div class="modal fade" id="adminProfileModal" tabindex="-1" aria-labelledby="adminProfileModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+                    <div class="modal-header border-0 pb-0 px-4 pt-4">
+                        <div>
+                            <h5 class="modal-title fw-bold" id="adminProfileModalLabel">Administrator Profile</h5>
+                            <p class="small text-muted mb-0">Details from your authenticated account</p>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body px-4 py-4">
+                        <dl class="mb-0">
+                            <dt class="small text-muted">Name</dt>
+                            <dd class="mb-3" th:text="${user.firstName != null and user.lastName != null ? user.firstName + ' ' + user.lastName : 'Not provided'}">Admin Name</dd>
+                            <dt class="small text-muted">Email</dt>
+                            <dd class="mb-3" th:text="${user.email}">admin@example.com</dd>
+                            <dt class="small text-muted">Role</dt>
+                            <dd class="mb-0" th:text="${user.role}">ADMIN</dd>
+                        </dl>
+                    </div>
+                    <div class="modal-footer border-0 px-4 pb-4 pt-0">
+                        <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <!-- Script for Mobile Sidebar Toggle -->
         <script>
