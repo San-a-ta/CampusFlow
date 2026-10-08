@@ -15,6 +15,8 @@ import java.util.List;
 public interface FeeRepository extends JpaRepository<Fee, Long> {
     @Query("""
             select f from Fee f
+             join fetch f.student s
+             left join fetch s.department
             where (:studentId is null or f.student.id = :studentId)
               and (:departmentId is null or f.student.department.id = :departmentId)
               and (:paymentStatus is null or f.paymentStatus = :paymentStatus)

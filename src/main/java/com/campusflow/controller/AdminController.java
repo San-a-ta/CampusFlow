@@ -1031,8 +1031,10 @@ public class AdminController {
                 LocalDate.now());
         model.addAttribute("user", user);
         model.addAttribute("feeList", feeList);
-        model.addAttribute("feeGroups", groupFeesByDepartment(feeList));
-        model.addAttribute("departments", departmentRepository.findAll());
+
+List<Department> departments = departmentRepository.findAll();
+model.addAttribute("feeGroups", groupFeesByDepartment(feeList, departments));
+model.addAttribute("departments", departments);
         model.addAttribute("students", userRepository.findByRole(Role.STUDENT));
         model.addAttribute("paymentStatuses", FeePaymentStatus.values());
         model.addAttribute("selectedStudentId", studentId);
@@ -1048,7 +1050,9 @@ public class AdminController {
         return "admin/fees";
     }
 
-    private List<DepartmentFees> groupFeesByDepartment(List<Fee> fees) {
+    private List<DepartmentFees> groupFeesByDepartment(
+        List<Fee> fees,
+        List<Department> departments) {
         Map<Long, List<Fee>> byDepartment = new LinkedHashMap<>();
         for (Fee fee : fees) {
             Long departmentId = fee.getStudent().getDepartment() == null
@@ -1056,12 +1060,13 @@ public class AdminController {
                     : fee.getStudent().getDepartment().getId();
             byDepartment.computeIfAbsent(departmentId, ignored -> new ArrayList<>()).add(fee);
         }
-        Map<Long, Department> departments = departmentRepository.findAll().stream()
-                .collect(Collectors.toMap(Department::getId, department -> department));
-        List<DepartmentFees> groups = new ArrayList<>();
-        byDepartment.forEach((departmentId, departmentFees) -> {
-            Department department = departmentId == null ? null : departments.get(departmentId);
-            groups.add(new DepartmentFees(
+         Map<Long, Department> departmentMap = departments.stream()
+        .collect(Collectors.toMap(Department::getId, department -> department));
+
+List<DepartmentFees> groups = new ArrayList<>();
+byDepartment.forEach((departmentId, departmentFees) -> {
+    Department department = departmentId == null ? null : departmentMap.get(departmentId);
+                groups.add(new DepartmentFees(
                     department == null ? "Unassigned" : department.getName(),
                     departmentId,
                     departmentFees));
