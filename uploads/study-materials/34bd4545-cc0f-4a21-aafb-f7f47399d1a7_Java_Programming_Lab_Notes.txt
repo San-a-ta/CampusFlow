@@ -1,0 +1,4 @@
+Object-Oriented Programming Lab
+
+Build small Java examples using encapsulation, inheritance, interfaces, and polymorphism.
+Add input validation and handle expected exceptions explicitly.

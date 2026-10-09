@@ -1,0 +1,4 @@
+Binary Search Trees
+
+A binary search tree stores smaller keys in the left subtree and larger keys in the right subtree.
+Practice insertion, in-order traversal, search, and deletion. Analyze average and worst-case complexity.

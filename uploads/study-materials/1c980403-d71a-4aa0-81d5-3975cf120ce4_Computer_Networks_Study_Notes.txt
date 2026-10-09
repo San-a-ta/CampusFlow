@@ -1,0 +1,4 @@
+Network Protocol Analysis
+
+Review encapsulation across application, transport, network, and link layers.
+For each protocol, identify its addressing, reliability, and routing responsibilities.
